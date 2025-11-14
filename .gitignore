@@ -1,0 +1,49 @@
+# =============================
+# Java build outputs
+# =============================
+JDBC-Practice/bin/
+**/bin/
+**/out/
+**/build/
+**/target/
+
+# =============================
+# Java class files
+# =============================
+*.class
+
+# =============================
+# Logs
+# =============================
+*.log
+
+# =============================
+# IDE - IntelliJ
+# =============================
+.idea/
+*.iml
+
+# =============================
+# System files
+# =============================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =============================
+# JAR handling
+# =============================
+# Keep all JARs in /lib (important!)
+!JDBC-Practice/lib/*.jar
+
+# Ignore jars only in build output (if they ever appear)
+dist/*.jar
+build/*.jar
+out/*.jar
+target/*.jar
+
+# =============================
+# VSCode
+# =============================
+# DO NOT ignore .vscode/ because you need settings.json
+# Nothing to ignore here.
