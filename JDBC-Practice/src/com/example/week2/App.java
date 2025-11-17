@@ -2,72 +2,72 @@ package com.example.week2;
 
 public class App {
 
-    static DBcomms comms;
-    
-    public static void main(String[] args) throws Exception {
-        System.out.println("Hello, from week2!");
-        comms = new DBcomms("TestingUser", "TestingUserPass");
+  static DBcomms comms;
 
-        int option;
-        do{
-            option = UI.chooseOption();
+  public static void main(String[] args) throws Exception {
+    System.out.println("Hello, from week2!");
+    comms = new DBcomms("TestingUser", "TestingUserPass");
 
-            switch (option){
-                // Close app
-                case 0 -> System.out.println("Closing app. Goodbye " + comms.user + "!");
+    int option;
+    do {
+      option = UI.chooseOption();
 
-                // Show lists (SELECT)
-                case 1 -> handleSelectOption();
+      switch (option) {
+        // Close app
+        case 0 -> System.out.println("Closing app. Goodbye " + comms.user + "!");
 
-                // Add new rows to tables (INSERT)
-                case 2 -> MyUtils.notImplementedYet();
+        // Show lists (SELECT)
+        case 1 -> handleSelectOption();
 
-                // Update rows in tables (UPDATE)
-                case 3 -> MyUtils.notImplementedYet();
+        // Add new rows to tables (INSERT)
+        case 2 -> MyUtils.notImplementedYet();
 
-                // Remove rows from tables (DELETE)
-                case 4 -> MyUtils.notImplementedYet();
-            }
-        } while (option != 0);
-    }
+        // Update rows in tables (UPDATE)
+        case 3 -> MyUtils.notImplementedYet();
 
-    static void handleSelectOption(){
-        int selectOption;
-        do{
-            selectOption = UI.chooseSelectOption();
+        // Remove rows from tables (DELETE)
+        case 4 -> MyUtils.notImplementedYet();
+      }
+    } while (option != 0);
+  }
 
-            System.out.println("You chose SELECT option: " + selectOption);
-            switch (selectOption){
-                // Return to main menu
-                case 0 -> System.out.println("Returning to main menu.");
+  static void handleSelectOption() {
+    int selectOption;
+    do {
+      selectOption = UI.chooseSelectOption();
 
-                // Show ALL people, skills, or projects
-                case 1 -> comms.selectAll("People");
-                case 2 -> comms.selectAll("Skills");
-                case 3 -> comms.selectAll("Projects");
+      System.out.println("You chose SELECT option: " + selectOption);
+      switch (selectOption) {
+        // Return to main menu
+        case 0 -> System.out.println("Returning to main menu.");
 
-                // Show every person working on a specific project
-                case 4 -> {
-                    String projectName = System.console().readLine("Enter the project name: ");
-                    comms.peopleWorkingOnProject(projectName);
-                }
+        // Show ALL people, skills, or projects
+        case 1 -> comms.selectAll("People");
+        case 2 -> comms.selectAll("Skills");
+        case 3 -> comms.selectAll("Projects");
 
-                // Show every person with a specific skill
-                case 5 -> {
-                    String skillName = System.console().readLine("Enter the skill name: ");
-                    comms.peopleWithSkill(skillName);
-                }
+        // Show every person working on a specific project
+        case 4 -> {
+          String projectName = System.console().readLine("Enter the project name: ");
+          comms.peopleWorkingOnProject(projectName);
+        }
 
-                // Search for people by skill or project
-                case 6 -> {
-                    String searchTerm = System.console().readLine("Enter SEARCH TERM: ");
-                    // Theres 3 versions of this function in DBcomms.java
-                    comms.searchPeople3(searchTerm);
-                }
+        // Show every person with a specific skill
+        case 5 -> {
+          String skillName = System.console().readLine("Enter the skill name: ");
+          comms.peopleWithSkill(skillName);
+        }
 
-                // Show skills missing from a project
-                case 7 -> MyUtils.notImplementedYet();
-            }
-        } while (selectOption != 0);
-    }
-} 
+        // Search for people by skill or project
+        case 6 -> {
+          String searchTerm = System.console().readLine("Enter SEARCH TERM: ");
+          // Theres 3 versions of this function in DBcomms.java
+          comms.searchPeople3(searchTerm);
+        }
+
+        // Show skills missing from a project
+        case 7 -> MyUtils.notImplementedYet();
+      }
+    } while (selectOption != 0);
+  }
+}
