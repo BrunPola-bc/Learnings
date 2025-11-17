@@ -59,7 +59,11 @@ public class App {
                 }
 
                 // Search for people by skill or project
-                case 6 -> MyUtils.notImplementedYet();
+                case 6 -> {
+                    String searchTerm = System.console().readLine("Enter SEARCH TERM: ");
+                    // Theres 3 versions of this function in DBcomms.java
+                    comms.searchPeople3(searchTerm);
+                }
 
                 // Show skills missing from a project
                 case 7 -> MyUtils.notImplementedYet();

@@ -1,5 +1,6 @@
 package com.example.week2;
 
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -48,7 +49,7 @@ public class DBcomms {
         }
     }
 
-    void peopleLinkedBy(String linkTable, String linkColumn, String name,
+    private void peopleLinkedBy(String linkTable, String linkColumn, String name,
                         String junctionTable, String junctionColumn) {
         int linkId = getIdByName(linkTable, linkColumn, name);
         if(linkId == -1){
@@ -61,7 +62,7 @@ public class DBcomms {
         String query = """
             SELECT p.FirstName, p.LastName
             FROM People p
-            JOIN %s j pp ON p.ID = j.PersonID
+            JOIN %s j ON p.ID = j.PersonID
             WHERE j.%s = ?
             """.formatted(junctionTable, junctionColumn);
 
@@ -120,6 +121,99 @@ public class DBcomms {
         catch (SQLException e) {
             MyUtils.myExceptionHandler(e);
             return -1;
+        }
+    }
+
+    // This function uses a stored procedure I wrote in Week1.sql
+    // but the procedure doesn't differentiate between search term matching a skill or project
+    // and it returns a person twice if it matches both
+    public void searchPeople1(String searchTerm) {
+        try(Connection con = getConnection();
+            CallableStatement stmt = con.prepareCall("{CALL SearchPeople(?)}")) {
+
+            stmt.setString(1, searchTerm);
+            
+            try(ResultSet rs = stmt.executeQuery()) {
+                MyUtils.showResultSet(rs);
+            }
+        }
+        catch (SQLException e) {
+            MyUtils.myExceptionHandler(e);
+        }
+    }
+
+    // Added distinction between skill and project matches
+    // People still show multiple times because it's possible to match multiple skills/projects
+    public void searchPeople2(String searchTerm){
+        
+        searchTerm = "%" + searchTerm + "%";
+
+        String query = """
+                SELECT p.FirstName, p.LastName, "SKILL" AS 'Matched Category', s.SkillName AS 'Search Match'
+                FROM People p
+                JOIN PersonSkills ps ON p.ID = ps.PersonID
+                JOIN Skills s ON ps.SkillID = s.ID
+                WHERE s.SkillName LIKE ?
+                UNION
+                SELECT p.FirstName, p.LastName, "PROJECT", pr.ProjectName
+                FROM People p
+                JOIN PersonProjects pp ON p.ID = pp.PersonID
+                JOIN Projects pr ON pp.ProjectID = pr.ID
+                WHERE pr.ProjectName LIKE ?
+                ORDER BY 2,1,3
+                """;
+
+        try(Connection con = getConnection();
+            PreparedStatement stmt = con.prepareStatement(query)) {
+
+            stmt.setString(1, searchTerm);
+            stmt.setString(2, searchTerm);
+            
+            try(ResultSet rs = stmt.executeQuery()) {
+                MyUtils.showResultSet(rs);
+            }
+        }
+        catch (SQLException e) {
+            MyUtils.myExceptionHandler(e);
+        }
+    }
+
+    // Another option to test out GROUP_CONCAT functionality
+    // This way each person should show up only once
+    public void searchPeople3(String searchTerm){
+        
+        searchTerm = "%" + searchTerm + "%";
+
+        String query = """
+                SELECT  p.FirstName,
+                        p.LastName,
+                        GROUP_CONCAT(DISTINCT s.SkillName) AS Matched_Skills,
+                        GROUP_CONCAT(DISTINCT pr.ProjectName) AS Matched_Projects
+                FROM People p
+                LEFT JOIN PersonSkills ps ON p.ID = ps.PersonID
+                LEFT JOIN Skills s  ON ps.SkillID = s.ID
+                                    AND s.SkillName LIKE ?
+                LEFT JOIN PersonProjects pp ON p.ID = pp.PersonID
+                LEFT JOIN Projects pr   ON pp.ProjectID = pr.ID
+                                        AND pr.ProjectName LIKE ?
+                GROUP BY p.ID
+                HAVING Matched_Skills IS NOT NULL
+                    OR Matched_Projects IS NOT NULL
+                ORDER BY 2,1,3
+                """;
+
+        try(Connection con = getConnection();
+            PreparedStatement stmt = con.prepareStatement(query)) {
+
+            stmt.setString(1, searchTerm);
+            stmt.setString(2, searchTerm);
+            
+            try(ResultSet rs = stmt.executeQuery()) {
+                MyUtils.showResultSet(rs);
+            }
+        }
+        catch (SQLException e) {
+            MyUtils.myExceptionHandler(e);
         }
     }
 }
