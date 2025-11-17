@@ -53,7 +53,10 @@ public class App {
                 }
 
                 // Show every person with a specific skill
-                case 5 -> MyUtils.notImplementedYet();
+                case 5 -> {
+                    String skillName = System.console().readLine("Enter the skill name: ");
+                    comms.peopleWithSkill(skillName);
+                }
 
                 // Search for people by skill or project
                 case 6 -> MyUtils.notImplementedYet();

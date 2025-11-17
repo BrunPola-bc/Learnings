@@ -48,27 +48,27 @@ public class DBcomms {
         }
     }
 
-    void peopleWorkingOnProject(String projectName) {
-        int projectId = getProjectIdByName(projectName);
-        if(projectId == -1){
+    void peopleLinkedBy(String linkTable, String linkColumn, String name,
+                        String junctionTable, String junctionColumn) {
+        int linkId = getIdByName(linkTable, linkColumn, name);
+        if(linkId == -1){
             return;
         }
+        if( !MyUtils.isSafeIdentifier(junctionTable) || !MyUtils.isSafeIdentifier(junctionColumn) ){
+            return;
+        }
+
         String query = """
             SELECT p.FirstName, p.LastName
             FROM People p
-            JOIN PersonProjects pp ON p.ID = pp.PersonID
-            WHERE pp.ProjectID = ?
-            """;
-            // Could have another JOIN to Projects to verify project name
-            // and wouldn't need the getProjectIdByName function.
-            // But I'm not sure how to separate
-            //      - project doesn't exist
-            //      - project exists but has no people assigned
+            JOIN %s j pp ON p.ID = j.PersonID
+            WHERE j.%s = ?
+            """.formatted(junctionTable, junctionColumn);
 
         try (Connection con = getConnection();
              PreparedStatement stmt = con.prepareStatement(query)) {
 
-            stmt.setInt(1, projectId);
+            stmt.setInt(1, linkId);
             try (ResultSet rs = stmt.executeQuery()) {
                 MyUtils.showResultSet(rs);
             }
@@ -78,46 +78,41 @@ public class DBcomms {
         }
     }
 
-    private int getProjectIdByName(String projectName) {
-        String query = "SELECT ID FROM Projects WHERE ProjectName = ?;";
-        try (Connection con = getConnection();
-             PreparedStatement stmt = con.prepareStatement(query)) {
-            stmt.setString(1, projectName);
-            
-            try(ResultSet rs = stmt.executeQuery()) {
-                if(rs.next()){
-                    return rs.getInt("ID");
-                }
-                else{
-                    System.out.println("** PROJECT '" + projectName + "' NOT FOUND! **");
-                    return -1;
-                }
-            }
-        }
-        catch (SQLException e) {
-            MyUtils.myExceptionHandler(e);
-            return -1;
-        }
+    void peopleWorkingOnProject(String projectName) {
+
+        peopleLinkedBy("Projects", "ProjectName", projectName,
+                    "PersonProjects", "ProjectID");
     }
 
-    // For option 1.5 "Show a list of every person with a specific skill"
-    // I need getSkillIdByName and peopleWithSkill functions that would be
-    // basically identical to the project versions above.
-    //
-    //      --> Thinking about generalizing these functions to avoid code duplication.
+    void peopleWithSkill(String skillName) {
+
+        peopleLinkedBy("Skills", "SkillName", skillName,
+                    "PersonSkills", "SkillID");
+    }
+
+    private int getProjectIdByName(String projectName) {
+        return getIdByName("Projects", "ProjectName", projectName);
+    }
     
     private int getSkillIdByName(String skillName) {
-        String query = "SELECT ID FROM Skills WHERE SkillName = ?;";
+        return getIdByName("Skills", "SkillName", skillName);
+    }
+
+    private int getIdByName(String tableName, String columnName, String Name){
+        if( !MyUtils.isSafeIdentifier(tableName) || !MyUtils.isSafeIdentifier(columnName) ){
+            return -1;
+        }
+        String query = "SELECT ID FROM " + tableName + " WHERE " + columnName + " = ?;";
         try (Connection con = getConnection();
              PreparedStatement stmt = con.prepareStatement(query)) {
-            stmt.setString(1, skillName);
+            stmt.setString(1, Name);
             
             try(ResultSet rs = stmt.executeQuery()) {
                 if(rs.next()){
                     return rs.getInt("ID");
                 }
                 else{
-                    System.out.println("** SKILL '" + skillName + "' NOT FOUND! **");
+                    System.out.println("** " + tableName.toUpperCase() + " '" + Name + "' NOT FOUND! **");
                     return -1;
                 }
             }

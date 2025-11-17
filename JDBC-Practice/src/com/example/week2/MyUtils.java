@@ -23,7 +23,7 @@ public class MyUtils {
     }
 
     // Writes ResultSet to console
-    // (Formatting needs work)
+    // (Formatting could use some work)
     public static void showResultSet(ResultSet rs){
         try {
             System.out.println("---- QUERY RESULT ----");
