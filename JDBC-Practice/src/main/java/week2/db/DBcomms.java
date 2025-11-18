@@ -1,4 +1,4 @@
-package com.example.week2;
+package week2.db;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -7,11 +7,20 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import week2.util.MyUtils;
 
 public class DBcomms {
 
-  String user;
-  String password;
+  private final String user;
+  private final String password;
+
+  public String getUser() {
+    return user;
+  }
+
+  public String getPassword() {
+    return password;
+  }
 
   // Connection con;
 
@@ -26,7 +35,7 @@ public class DBcomms {
   }
 
   // SELECT * FROM tableName;
-  void selectAll(String tableName) {
+  public void selectAll(String tableName) {
     if (!MyUtils.isSafeIdentifier(tableName)) {
       return;
     }
@@ -80,24 +89,17 @@ public class DBcomms {
     }
   }
 
-  void peopleWorkingOnProject(String projectName) {
+  public void peopleWorkingOnProject(String projectName) {
 
     peopleLinkedBy("Projects", "ProjectName", projectName, "PersonProjects", "ProjectID");
   }
 
-  void peopleWithSkill(String skillName) {
+  public void peopleWithSkill(String skillName) {
 
     peopleLinkedBy("Skills", "SkillName", skillName, "PersonSkills", "SkillID");
   }
 
-  private int getProjectIdByName(String projectName) {
-    return getIdByName("Projects", "ProjectName", projectName);
-  }
-
-  private int getSkillIdByName(String skillName) {
-    return getIdByName("Skills", "SkillName", skillName);
-  }
-
+  // Generalised from getSkillIdByName and getProjectIdByName
   private int getIdByName(String tableName, String columnName, String Name) {
     if (!MyUtils.isSafeIdentifier(tableName) || !MyUtils.isSafeIdentifier(columnName)) {
       return -1;
@@ -176,6 +178,8 @@ public class DBcomms {
 
   // Another option to test out GROUP_CONCAT functionality
   // This way each person should show up only once
+  // -->  Still not ideal since there's left joins starting from People,
+  //      and is filtered by HAVING ... IS NOT NULL
   public void searchPeople3(String searchTerm) {
 
     searchTerm = "%" + searchTerm + "%";
@@ -191,8 +195,8 @@ public class DBcomms {
         LEFT JOIN Skills s  ON ps.SkillID = s.ID
                             AND s.SkillName LIKE ?
         LEFT JOIN PersonProjects pp ON p.ID = pp.PersonID
-        LEFT JOIN Projects pr   ON pp.ProjectID = pr.ID
-                                AND pr.ProjectName LIKE ?
+        LEFT JOIN Projects pr ON pp.ProjectID = pr.ID
+                              AND pr.ProjectName LIKE ?
         GROUP BY p.ID
         HAVING Matched_Skills IS NOT NULL
             OR Matched_Projects IS NOT NULL
@@ -204,6 +208,46 @@ public class DBcomms {
 
       stmt.setString(1, searchTerm);
       stmt.setString(2, searchTerm);
+
+      try (ResultSet rs = stmt.executeQuery()) {
+        MyUtils.showResultSet(rs);
+      }
+    } catch (SQLException e) {
+      MyUtils.myExceptionHandler(e);
+    }
+  }
+
+  // This uses the same query from Week1.sql
+  // to filter skills required by a project but not
+  // possessed by any person working on it
+  public void missingSkills(String projectName) {
+
+    projectName = "%" + projectName + "%";
+
+    String query =
+        """
+        SELECT DISTINCT s.ID, s.SkillName
+        FROM Skills s
+        JOIN ProjectSkills prs ON s.ID = prs.SkillID
+        -- Filter skills by project name
+        WHERE prs.ProjectID = (
+            SELECT ID FROM Projects
+            WHERE ProjectName LIKE ?
+        )
+        -- Then remove
+        AND s.ID NOT IN (
+            -- Skills that people working on the project have
+            SELECT ps.SkillID
+            FROM PersonSkills ps
+            JOIN PersonProjects pp ON ps.PersonID = pp.PersonID
+            WHERE pp.ProjectID = prs.ProjectID
+        )
+        """;
+
+    try (Connection con = getConnection();
+        PreparedStatement stmt = con.prepareStatement(query)) {
+
+      stmt.setString(1, projectName);
 
       try (ResultSet rs = stmt.executeQuery()) {
         MyUtils.showResultSet(rs);

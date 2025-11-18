@@ -1,15 +1,28 @@
-package com.example.week2;
+package week2.util;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class MyUtils {
 
+  static String packagePrefix = "week2";
+
   // Restrict stack trace to only my package
   public static void myExceptionHandler(Exception e) {
-    String packagePrefix = "com.example";
 
-    System.err.println(e.getClass().getSimpleName() + ": " + e.getMessage());
+    if (e == null) {
+      System.err.println("Exception is null");
+      return;
+    }
+
+    if (e instanceof SQLException sqlEx) {
+      System.err.println("SQLException:");
+      System.err.println("  Message:    " + sqlEx.getMessage());
+      System.err.println("  SQLState:   " + sqlEx.getSQLState());
+      System.err.println("  Error Code: " + sqlEx.getErrorCode());
+    } else {
+      System.err.println(e.getClass().getSimpleName() + ": " + e.getMessage());
+    }
 
     for (StackTraceElement element : e.getStackTrace()) {
       if (element.getClassName().startsWith(packagePrefix)) {

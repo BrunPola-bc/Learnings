@@ -1,11 +1,15 @@
-package com.example.week2;
+package week2;
+
+import week2.db.DBcomms;
+import week2.ui.UI;
+import week2.util.MyUtils;
 
 public class App {
 
   static DBcomms comms;
 
   public static void main(String[] args) throws Exception {
-    System.out.println("Hello, from week2!");
+    UI.hello();
     comms = new DBcomms("TestingUser", "TestingUserPass");
 
     int option;
@@ -14,7 +18,7 @@ public class App {
 
       switch (option) {
         // Close app
-        case 0 -> System.out.println("Closing app. Goodbye " + comms.user + "!");
+        case 0 -> UI.goodbye(comms.getUser());
 
         // Show lists (SELECT)
         case 1 -> handleSelectOption();
@@ -36,10 +40,9 @@ public class App {
     do {
       selectOption = UI.chooseSelectOption();
 
-      System.out.println("You chose SELECT option: " + selectOption);
       switch (selectOption) {
         // Return to main menu
-        case 0 -> System.out.println("Returning to main menu.");
+        case 0 -> UI.returnToMainMenu();
 
         // Show ALL people, skills, or projects
         case 1 -> comms.selectAll("People");
@@ -66,7 +69,10 @@ public class App {
         }
 
         // Show skills missing from a project
-        case 7 -> MyUtils.notImplementedYet();
+        case 7 -> {
+          String projectName = System.console().readLine("Enter the project name: ");
+          comms.missingSkills(projectName);
+        }
       }
     } while (selectOption != 0);
   }

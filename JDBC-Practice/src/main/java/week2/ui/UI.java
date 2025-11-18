@@ -1,4 +1,4 @@
-package com.example.week2;
+package week2.ui;
 
 public class UI {
 
@@ -47,5 +47,17 @@ public class UI {
         System.out.println("** INVALID SELECT OPTION INPUT! ** Please try again.");
       }
     }
+  }
+
+  public static void hello() {
+    System.out.println("Hello from week2!");
+  }
+
+  public static void goodbye(String user) {
+    System.out.println("Closing app. Goodbye " + user + "!");
+  }
+
+  public static void returnToMainMenu() {
+    System.out.println("Returning to main menu.");
   }
 }
