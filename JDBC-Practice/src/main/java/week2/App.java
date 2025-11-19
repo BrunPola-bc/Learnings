@@ -9,7 +9,8 @@ public class App {
 
   public static void main(String[] args) throws Exception {
     UI.hello();
-    comms = new DBcomms("TestingUser", "TestingUserPass");
+    comms = new DBcomms();
+    UI.loginSuccess(comms.getUser());
 
     int option;
     do {

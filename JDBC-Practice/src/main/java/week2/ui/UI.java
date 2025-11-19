@@ -67,6 +67,10 @@ public class UI {
     System.out.println("This feature is not implemented yet.");
   }
 
+  public static void loginSuccess(String user) {
+    System.out.println("Login successful! Welcome, " + user + "!");
+  }
+
   // Not too smart or clean but works for printing lists of model objects
   // (each of them has toString implemented)
   public static <T> void printList(List<T> list, String header) {

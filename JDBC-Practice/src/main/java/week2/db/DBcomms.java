@@ -1,5 +1,7 @@
 package week2.db;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -9,6 +11,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import week2.model.Person;
 import week2.model.Project;
 import week2.model.Skill;
@@ -16,6 +19,7 @@ import week2.util.MyUtils;
 
 public class DBcomms {
 
+  private final String url;
   private final String user;
   private final String password;
 
@@ -23,18 +27,26 @@ public class DBcomms {
     return user;
   }
 
-  public String getPassword() {
-    return password;
-  }
+  public DBcomms() {
+    Properties prop = new Properties();
+    try (InputStream input = getClass().getClassLoader().getResourceAsStream("db.properties"); ) {
 
-  public DBcomms(String user, String password) {
-    this.user = user;
-    this.password = password;
-    System.out.println("DBcomms user set to: " + user);
+      if (input == null) {
+        throw new RuntimeException("db.properties not found in resources");
+      }
+      prop.load(input);
+
+      this.url = prop.getProperty("db.url");
+      this.user = prop.getProperty("db.user");
+      this.password = prop.getProperty("db.password");
+
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to load db.properties", e);
+    }
   }
 
   Connection getConnection() throws SQLException {
-    return DriverManager.getConnection("jdbc:mysql://localhost:3306/week1database", user, password);
+    return DriverManager.getConnection(url, user, password);
   }
 
   // Select all people, skills, projects seems like a lot of code duplication

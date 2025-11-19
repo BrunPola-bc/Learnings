@@ -1,4 +1,9 @@
 {
+    "java.project.sourcePaths": [
+        "JDBC-Practice/src/main/java",
+        "JDBC-Practice/src/main/resources"
+    ],
+    "java.project.outputPath": "JDBC-Practice/bin",
     "java.project.referencedLibraries": [
         "lib/**/*.jar",
         "JDBC-Practice/lib/mysql-connector-j-9.5.0.jar"
