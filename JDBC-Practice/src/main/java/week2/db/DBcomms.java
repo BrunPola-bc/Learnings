@@ -49,8 +49,7 @@ public class DBcomms {
     return DriverManager.getConnection(url, user, password);
   }
 
-  // Select all people, skills, projects seems like a lot of code duplication
-  // I'll probably look into row mappers later
+  // [OLD] - theres new methods below that use RowMapper to avoid code duplication
   public List<Person> selectAllPeople() {
     List<Person> people = new ArrayList<>();
     String query = "SELECT ID, FirstName, LastName FROM People";
@@ -69,6 +68,7 @@ public class DBcomms {
     return people;
   }
 
+  // [OLD] - theres new methods below that use RowMapper to avoid code duplication
   public List<Skill> selectAllSkills() {
     List<Skill> skills = new ArrayList<>();
     String query = "SELECT ID, SkillName FROM Skills";
@@ -86,6 +86,7 @@ public class DBcomms {
     return skills;
   }
 
+  // [OLD] - theres new methods below that use RowMapper to avoid code duplication
   public List<Project> selectAllProjects() {
     List<Project> projects = new ArrayList<>();
     String query = "SELECT ID, ProjectName FROM Projects";
@@ -101,6 +102,41 @@ public class DBcomms {
       MyUtils.myExceptionHandler(e);
     }
     return projects;
+  }
+
+  // Looked into RowMapper pattern to reduce code duplication
+  // I guess I got too far out of "Introduction to JDBC" for this week
+  private <T> List<T> queryResultList(String sql, RowMapper<T> mapper) {
+    List<T> results = new ArrayList<>();
+
+    try (Connection con = getConnection();
+        Statement stmt = con.createStatement();
+        ResultSet rs = stmt.executeQuery(sql)) {
+
+      while (rs.next()) {
+        results.add(mapper.map(rs));
+      }
+
+    } catch (SQLException e) {
+      MyUtils.myExceptionHandler(e);
+    }
+
+    return results;
+  }
+
+  public List<Person> selectAllPeopleRM() {
+    String sql = "SELECT ID, FirstName, LastName FROM People";
+    return queryResultList(sql, new PersonMapper());
+  }
+
+  public List<Skill> selectAllSkillsRM() {
+    String sql = "SELECT ID, SkillName FROM Skills";
+    return queryResultList(sql, new SkillMapper());
+  }
+
+  public List<Project> selectAllProjectsRM() {
+    String sql = "SELECT ID, ProjectName FROM Projects";
+    return queryResultList(sql, new ProjectMapper());
   }
 
   // Generalised method for people linked by project or skill

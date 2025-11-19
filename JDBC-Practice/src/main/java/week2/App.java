@@ -46,16 +46,16 @@ public class App {
 
         // Show ALL people, skills, or projects
         case 1 -> {
-          var people = comms.selectAllPeople();
-          UI.printList(people, "All People");
+          var people = comms.selectAllPeopleRM();
+          UI.printList(people, "All People (with RowMapper)");
         }
         case 2 -> {
-          var skills = comms.selectAllSkills();
-          UI.printList(skills, "All Skills");
+          var skills = comms.selectAllSkillsRM();
+          UI.printList(skills, "All Skills (with RowMapper)");
         }
         case 3 -> {
-          var projects = comms.selectAllProjects();
-          UI.printList(projects, "All Projects");
+          var projects = comms.selectAllProjectsRM();
+          UI.printList(projects, "All Projects (with RowMapper)");
         }
 
         // Show every person working on a specific project
