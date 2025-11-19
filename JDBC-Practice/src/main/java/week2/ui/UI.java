@@ -1,5 +1,7 @@
 package week2.ui;
 
+import java.util.List;
+
 public class UI {
 
   // Main menu
@@ -59,5 +61,29 @@ public class UI {
 
   public static void returnToMainMenu() {
     System.out.println("Returning to main menu.");
+  }
+
+  public static void notImplementedYet() {
+    System.out.println("This feature is not implemented yet.");
+  }
+
+  // Not too smart or clean but works for printing lists of model objects
+  // (each of them has toString implemented)
+  public static <T> void printList(List<T> list, String header) {
+    System.out.println("-----------------------");
+    System.out.println("\tLIST OUTPUT: " + header);
+    if (list == null || list.isEmpty()) {
+      System.out.println("(empty list)");
+    } else {
+      for (T item : list) {
+        System.out.println(item);
+      }
+    }
+    System.out.println("-----------------------");
+  }
+
+  // Overloaded method without header
+  public static <T> void printList(List<T> list) {
+    printList(list, "");
   }
 }

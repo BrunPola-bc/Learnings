@@ -7,6 +7,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+import week2.model.Person;
+import week2.model.Project;
+import week2.model.Skill;
 import week2.util.MyUtils;
 
 public class DBcomms {
@@ -22,8 +27,6 @@ public class DBcomms {
     return password;
   }
 
-  // Connection con;
-
   public DBcomms(String user, String password) {
     this.user = user;
     this.password = password;
@@ -34,43 +37,81 @@ public class DBcomms {
     return DriverManager.getConnection("jdbc:mysql://localhost:3306/week1database", user, password);
   }
 
-  // SELECT * FROM tableName;
-  public void selectAll(String tableName) {
-    if (!MyUtils.isSafeIdentifier(tableName)) {
-      return;
-    }
-    String query = "SELECT * FROM " + tableName + ";";
+  // Select all people, skills, projects seems like a lot of code duplication
+  // I'll probably look into row mappers later
+  public List<Person> selectAllPeople() {
+    List<Person> people = new ArrayList<>();
+    String query = "SELECT ID, FirstName, LastName FROM People";
 
     try (Connection con = getConnection();
-        Statement stmt = con.createStatement()) {
-      ResultSet rs = stmt.executeQuery(query);
-      MyUtils.showResultSet(rs);
-    } catch (SQLException e) {
-      if (e.getMessage().contains("doesn't exist")) {
-        System.out.println("** TABLE '" + tableName + "' DOESN'T EXIST! **");
-      } else {
-        MyUtils.myExceptionHandler(e);
+        Statement stmt = con.createStatement();
+        ResultSet rs = stmt.executeQuery(query)) {
+      while (rs.next()) {
+        Person person =
+            new Person(rs.getInt("ID"), rs.getString("FirstName"), rs.getString("LastName"));
+        people.add(person);
       }
+    } catch (SQLException e) {
+      MyUtils.myExceptionHandler(e);
     }
+    return people;
   }
 
-  private void peopleLinkedBy(
+  public List<Skill> selectAllSkills() {
+    List<Skill> skills = new ArrayList<>();
+    String query = "SELECT ID, SkillName FROM Skills";
+
+    try (Connection con = getConnection();
+        Statement stmt = con.createStatement();
+        ResultSet rs = stmt.executeQuery(query)) {
+      while (rs.next()) {
+        Skill skill = new Skill(rs.getInt("ID"), rs.getString("SkillName"));
+        skills.add(skill);
+      }
+    } catch (SQLException e) {
+      MyUtils.myExceptionHandler(e);
+    }
+    return skills;
+  }
+
+  public List<Project> selectAllProjects() {
+    List<Project> projects = new ArrayList<>();
+    String query = "SELECT ID, ProjectName FROM Projects";
+
+    try (Connection con = getConnection();
+        Statement stmt = con.createStatement();
+        ResultSet rs = stmt.executeQuery(query)) {
+      while (rs.next()) {
+        Project project = new Project(rs.getInt("ID"), rs.getString("ProjectName"));
+        projects.add(project);
+      }
+    } catch (SQLException e) {
+      MyUtils.myExceptionHandler(e);
+    }
+    return projects;
+  }
+
+  // Generalised method for people linked by project or skill
+  private List<Person> peopleLinkedBy(
       String linkTable,
       String linkColumn,
       String name,
       String junctionTable,
       String junctionColumn) {
+
+    List<Person> people = new ArrayList<>();
     int linkId = getIdByName(linkTable, linkColumn, name);
+
     if (linkId == -1) {
-      return;
+      return null;
     }
     if (!MyUtils.isSafeIdentifier(junctionTable) || !MyUtils.isSafeIdentifier(junctionColumn)) {
-      return;
+      return null;
     }
 
     String query =
         """
-        SELECT p.FirstName, p.LastName
+        SELECT p.ID, p.FirstName, p.LastName
         FROM People p
         JOIN %s j ON p.ID = j.PersonID
         WHERE j.%s = ?
@@ -82,21 +123,29 @@ public class DBcomms {
 
       stmt.setInt(1, linkId);
       try (ResultSet rs = stmt.executeQuery()) {
-        MyUtils.showResultSet(rs);
+
+        while (rs.next()) {
+          Person person =
+              new Person(rs.getInt("ID"), rs.getString("FirstName"), rs.getString("LastName"));
+          people.add(person);
+        }
+
+        return people;
       }
     } catch (SQLException e) {
       MyUtils.myExceptionHandler(e);
+      return null;
     }
   }
 
-  public void peopleWorkingOnProject(String projectName) {
+  public List<Person> peopleWorkingOnProject(String projectName) {
 
-    peopleLinkedBy("Projects", "ProjectName", projectName, "PersonProjects", "ProjectID");
+    return peopleLinkedBy("Projects", "ProjectName", projectName, "PersonProjects", "ProjectID");
   }
 
-  public void peopleWithSkill(String skillName) {
+  public List<Person> peopleWithSkill(String skillName) {
 
-    peopleLinkedBy("Skills", "SkillName", skillName, "PersonSkills", "SkillID");
+    return peopleLinkedBy("Skills", "SkillName", skillName, "PersonSkills", "SkillID");
   }
 
   // Generalised from getSkillIdByName and getProjectIdByName
@@ -217,12 +266,56 @@ public class DBcomms {
     }
   }
 
+  // Giving up on the idea of showing what skills/projects matched the search term
+  // Just showing people that have either a matching skill or project
+  public List<Person> searchPeople4(String searchTerm) {
+    List<Person> people = new ArrayList<>();
+
+    searchTerm = "%" + searchTerm + "%";
+
+    String query =
+        """
+        SELECT p.ID, p.FirstName, p.LastName
+        FROM People p
+        JOIN PersonSkills ps ON p.ID = ps.PersonID
+        JOIN Skills s ON ps.SkillID = s.ID
+        WHERE s.SkillName LIKE ?
+        UNION
+        SELECT p.ID, p.FirstName, p.LastName
+        FROM People p
+        JOIN PersonProjects pp ON p.ID = pp.PersonID
+        JOIN Projects pr ON pp.ProjectID = pr.ID
+        WHERE pr.ProjectName LIKE ?
+        """;
+
+    try (Connection con = getConnection();
+        PreparedStatement stmt = con.prepareStatement(query)) {
+
+      stmt.setString(1, searchTerm);
+      stmt.setString(2, searchTerm);
+
+      try (ResultSet rs = stmt.executeQuery()) {
+
+        while (rs.next()) {
+          Person person =
+              new Person(rs.getInt("ID"), rs.getString("FirstName"), rs.getString("LastName"));
+          people.add(person);
+        }
+
+        return people;
+      }
+    } catch (SQLException e) {
+      MyUtils.myExceptionHandler(e);
+      return null;
+    }
+  }
+
   // This uses the same query from Week1.sql
   // to filter skills required by a project but not
   // possessed by any person working on it
-  public void missingSkills(String projectName) {
+  public List<Skill> missingSkills(String projectName) {
 
-    projectName = "%" + projectName + "%";
+    List<Skill> missingSkills = new ArrayList<>();
 
     String query =
         """
@@ -250,10 +343,16 @@ public class DBcomms {
       stmt.setString(1, projectName);
 
       try (ResultSet rs = stmt.executeQuery()) {
-        MyUtils.showResultSet(rs);
+        while (rs.next()) {
+          Skill skill = new Skill(rs.getInt("ID"), rs.getString("SkillName"));
+          missingSkills.add(skill);
+        }
+
+        return missingSkills;
       }
     } catch (SQLException e) {
       MyUtils.myExceptionHandler(e);
+      return null;
     }
   }
 }

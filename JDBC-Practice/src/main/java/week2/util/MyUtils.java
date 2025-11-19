@@ -31,12 +31,9 @@ public class MyUtils {
     }
   }
 
-  public static void notImplementedYet() {
-    System.out.println("This feature is not implemented yet.");
-  }
-
   // Writes ResultSet to console
   // (Formatting could use some work)
+  // ** Working on making this obsolete **
   public static void showResultSet(ResultSet rs) {
     try {
       System.out.println("---- QUERY RESULT ----");

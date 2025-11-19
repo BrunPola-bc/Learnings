@@ -2,7 +2,6 @@ package week2;
 
 import week2.db.DBcomms;
 import week2.ui.UI;
-import week2.util.MyUtils;
 
 public class App {
 
@@ -24,13 +23,13 @@ public class App {
         case 1 -> handleSelectOption();
 
         // Add new rows to tables (INSERT)
-        case 2 -> MyUtils.notImplementedYet();
+        case 2 -> UI.notImplementedYet();
 
         // Update rows in tables (UPDATE)
-        case 3 -> MyUtils.notImplementedYet();
+        case 3 -> UI.notImplementedYet();
 
         // Remove rows from tables (DELETE)
-        case 4 -> MyUtils.notImplementedYet();
+        case 4 -> UI.notImplementedYet();
       }
     } while (option != 0);
   }
@@ -45,33 +44,46 @@ public class App {
         case 0 -> UI.returnToMainMenu();
 
         // Show ALL people, skills, or projects
-        case 1 -> comms.selectAll("People");
-        case 2 -> comms.selectAll("Skills");
-        case 3 -> comms.selectAll("Projects");
+        case 1 -> {
+          var people = comms.selectAllPeople();
+          UI.printList(people, "All People");
+        }
+        case 2 -> {
+          var skills = comms.selectAllSkills();
+          UI.printList(skills, "All Skills");
+        }
+        case 3 -> {
+          var projects = comms.selectAllProjects();
+          UI.printList(projects, "All Projects");
+        }
 
         // Show every person working on a specific project
         case 4 -> {
           String projectName = System.console().readLine("Enter the project name: ");
-          comms.peopleWorkingOnProject(projectName);
+          var peopleWorkingOnProject = comms.peopleWorkingOnProject(projectName);
+          UI.printList(peopleWorkingOnProject, "People working on Project: " + projectName);
         }
 
         // Show every person with a specific skill
         case 5 -> {
           String skillName = System.console().readLine("Enter the skill name: ");
-          comms.peopleWithSkill(skillName);
+          var peopleWithSkill = comms.peopleWithSkill(skillName);
+          UI.printList(peopleWithSkill, "People with Skill: " + skillName);
         }
 
         // Search for people by skill or project
         case 6 -> {
           String searchTerm = System.console().readLine("Enter SEARCH TERM: ");
-          // Theres 3 versions of this function in DBcomms.java
-          comms.searchPeople3(searchTerm);
+          // There are 4 versions of this function in DBcomms.java
+          var searchResults = comms.searchPeople4(searchTerm);
+          UI.printList(searchResults, "Search results for: " + searchTerm);
         }
 
         // Show skills missing from a project
         case 7 -> {
           String projectName = System.console().readLine("Enter the project name: ");
-          comms.missingSkills(projectName);
+          var missingSkills = comms.missingSkills(projectName);
+          UI.printList(missingSkills, "Skills missing from Project: " + projectName);
         }
       }
     } while (selectOption != 0);
