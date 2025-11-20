@@ -15,6 +15,7 @@ import java.util.Properties;
 import week2.model.Person;
 import week2.model.Project;
 import week2.model.Skill;
+import week2.ui.UI;
 import week2.util.MyUtils;
 
 public class DBcomms {
@@ -210,7 +211,7 @@ public class DBcomms {
         if (rs.next()) {
           return rs.getInt("ID");
         } else {
-          System.out.println("** " + tableName.toUpperCase() + " '" + Name + "' NOT FOUND! **");
+          UI.message("** " + tableName.toUpperCase() + " '" + Name + "' NOT FOUND! **");
           return -1;
         }
       }
@@ -401,6 +402,387 @@ public class DBcomms {
     } catch (SQLException e) {
       MyUtils.myExceptionHandler(e);
       return null;
+    }
+  }
+
+  public Person fetchPersonIfExists(Person person) {
+
+    // Assuming FirstName + LastName uniquely identifies a person for simplicity
+    // real database would have an email/username/OIB
+    String checkSql = "SELECT ID FROM People WHERE FirstName = ? AND LastName = ?;";
+
+    try (Connection con = getConnection();
+        PreparedStatement checkStmt = con.prepareStatement(checkSql)) {
+      checkStmt.setString(1, person.getFirstName());
+      checkStmt.setString(2, person.getLastName());
+
+      try (ResultSet rs = checkStmt.executeQuery()) {
+        if (rs.next()) {
+          return new Person(rs.getInt("ID"), person.getFirstName(), person.getLastName());
+        }
+      }
+
+    } catch (SQLException e) {
+      MyUtils.myExceptionHandler(e);
+    }
+    return null;
+  }
+
+  public Person insertNewPerson(Person person) {
+
+    Person existingPerson = fetchPersonIfExists(person);
+    if (existingPerson != null) {
+      return existingPerson;
+    }
+
+    String insertSql = "INSERT INTO People (FirstName, LastName) VALUES (?, ?);";
+
+    try (Connection con = getConnection();
+        PreparedStatement insertStmt =
+            con.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
+
+      insertStmt.setString(1, person.getFirstName());
+      insertStmt.setString(2, person.getLastName());
+
+      insertStmt.executeUpdate();
+      try (ResultSet keys = insertStmt.getGeneratedKeys()) {
+        if (keys.next()) {
+          int newId = keys.getInt(1);
+          return new Person(newId, person.getFirstName(), person.getLastName());
+        }
+      }
+
+      throw new RuntimeException("Insert new person succeeded BUT ** no ID obtained **");
+
+    } catch (SQLException e) {
+      MyUtils.myExceptionHandler(e);
+      return null;
+    }
+  }
+
+  public Skill fetchSkillIfExists(Skill skill) {
+
+    String checkSql = "SELECT ID FROM Skills WHERE SkillName = ?;";
+    try (Connection con = getConnection();
+        PreparedStatement checkStmt = con.prepareStatement(checkSql)) {
+      checkStmt.setString(1, skill.getSkillName());
+
+      try (ResultSet rs = checkStmt.executeQuery()) {
+        if (rs.next()) {
+          return new Skill(rs.getInt("ID"), skill.getSkillName());
+        }
+      }
+
+    } catch (SQLException e) {
+      MyUtils.myExceptionHandler(e);
+    }
+    return null;
+  }
+
+  public Skill insertNewSkill(Skill skill) {
+
+    Skill existingSkill = fetchSkillIfExists(skill);
+    if (existingSkill != null) {
+      return existingSkill;
+    }
+
+    String insertSql = "INSERT INTO Skills (SkillName) VALUES (?);";
+
+    try (Connection con = getConnection();
+        PreparedStatement insertStmt =
+            con.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
+
+      insertStmt.setString(1, skill.getSkillName());
+
+      insertStmt.executeUpdate();
+      try (ResultSet keys = insertStmt.getGeneratedKeys()) {
+        if (keys.next()) {
+          int newId = keys.getInt(1);
+          return new Skill(newId, skill.getSkillName());
+        }
+      }
+
+      throw new RuntimeException("Insert new skill succeeded BUT ** no ID obtained **");
+
+    } catch (SQLException e) {
+      MyUtils.myExceptionHandler(e);
+      return null;
+    }
+  }
+
+  public Project fetchProjectIfExists(Project project) {
+
+    String checkSql = "SELECT ID FROM Projects WHERE ProjectName = ?;";
+    try (Connection con = getConnection();
+        PreparedStatement checkStmt = con.prepareStatement(checkSql)) {
+      checkStmt.setString(1, project.getProjectName());
+
+      try (ResultSet rs = checkStmt.executeQuery()) {
+        if (rs.next()) {
+          return new Project(rs.getInt("ID"), project.getProjectName());
+        }
+      }
+
+    } catch (SQLException e) {
+      MyUtils.myExceptionHandler(e);
+    }
+    return null;
+  }
+
+  public Project insertNewProject(Project project) {
+
+    Project existingProject = fetchProjectIfExists(project);
+    if (existingProject != null) {
+      return existingProject;
+    }
+
+    String insertSql = "INSERT INTO Projects (ProjectName) VALUES (?);";
+
+    try (Connection con = getConnection();
+        PreparedStatement insertStmt =
+            con.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
+
+      insertStmt.setString(1, project.getProjectName());
+
+      insertStmt.executeUpdate();
+      try (ResultSet keys = insertStmt.getGeneratedKeys()) {
+        if (keys.next()) {
+          int newId = keys.getInt(1);
+          return new Project(newId, project.getProjectName());
+        }
+      }
+
+      throw new RuntimeException("Insert new project succeeded BUT ** no ID obtained **");
+
+    } catch (SQLException e) {
+      MyUtils.myExceptionHandler(e);
+      return null;
+    }
+  }
+
+  public boolean linkPersonSkill(Person person, Skill skill) {
+
+    String insertSql = "INSERT IGNORE INTO PersonSkills (PersonID, SkillID) VALUES (?, ?);";
+
+    try (Connection con = getConnection();
+        PreparedStatement insertStmt = con.prepareStatement(insertSql)) {
+
+      insertStmt.setInt(1, person.getId());
+      insertStmt.setInt(2, skill.getId());
+
+      int affectedRows = insertStmt.executeUpdate();
+      return affectedRows > 0;
+
+    } catch (SQLException e) {
+      MyUtils.myExceptionHandler(e);
+      return false;
+    }
+  }
+
+  public boolean linkProjectSkill(Project project, Skill skill) {
+
+    String insertSql = "INSERT IGNORE INTO ProjectSkills (ProjectID, SkillID) VALUES (?, ?);";
+
+    try (Connection con = getConnection();
+        PreparedStatement insertStmt = con.prepareStatement(insertSql)) {
+
+      insertStmt.setInt(1, project.getId());
+      insertStmt.setInt(2, skill.getId());
+
+      int affectedRows = insertStmt.executeUpdate();
+      return affectedRows > 0;
+
+    } catch (SQLException e) {
+      MyUtils.myExceptionHandler(e);
+      return false;
+    }
+  }
+
+  public boolean linkPersonProject(Person person, Project project) {
+
+    String insertSql = "INSERT IGNORE INTO PersonProjects (PersonID, ProjectID) VALUES (?, ?);";
+
+    try (Connection con = getConnection();
+        PreparedStatement insertStmt = con.prepareStatement(insertSql)) {
+
+      insertStmt.setInt(1, person.getId());
+      insertStmt.setInt(2, project.getId());
+
+      int affectedRows = insertStmt.executeUpdate();
+      return affectedRows > 0;
+
+    } catch (SQLException e) {
+      MyUtils.myExceptionHandler(e);
+      return false;
+    }
+  }
+
+  public boolean updatePerson(Person person) {
+    String updateSql = "UPDATE People SET FirstName = ?, LastName = ? WHERE ID = ?;";
+    try (Connection con = getConnection();
+        PreparedStatement updateStmt = con.prepareStatement(updateSql)) {
+
+      updateStmt.setString(1, person.getFirstName());
+      updateStmt.setString(2, person.getLastName());
+      updateStmt.setInt(3, person.getId());
+
+      int affectedRows = updateStmt.executeUpdate();
+      return affectedRows > 0;
+
+    } catch (SQLException e) {
+      MyUtils.myExceptionHandler(e);
+      return false;
+    }
+  }
+
+  public boolean updateSkill(Skill skill) {
+    String updateSql = "UPDATE Skills SET SkillName = ? WHERE ID = ?;";
+    try (Connection con = getConnection();
+        PreparedStatement updateStmt = con.prepareStatement(updateSql)) {
+
+      updateStmt.setString(1, skill.getSkillName());
+      updateStmt.setInt(2, skill.getId());
+
+      int affectedRows = updateStmt.executeUpdate();
+      return affectedRows > 0;
+
+    } catch (SQLException e) {
+      MyUtils.myExceptionHandler(e);
+      return false;
+    }
+  }
+
+  public boolean updateProject(Project project) {
+    String updateSql = "UPDATE Projects SET ProjectName = ? WHERE ID = ?;";
+    try (Connection con = getConnection();
+        PreparedStatement updateStmt = con.prepareStatement(updateSql)) {
+
+      updateStmt.setString(1, project.getProjectName());
+      updateStmt.setInt(2, project.getId());
+
+      int affectedRows = updateStmt.executeUpdate();
+      return affectedRows > 0;
+
+    } catch (SQLException e) {
+      MyUtils.myExceptionHandler(e);
+      return false;
+    }
+  }
+
+  public void deletePerson(Person person) {
+    String[] deleteSql = {
+      "DELETE FROM PersonSkills WHERE PersonID = ?;",
+      "DELETE FROM PersonProjects WHERE PersonID = ?;",
+      "DELETE FROM People WHERE ID = ?;"
+    };
+
+    try (Connection con = getConnection()) {
+      for (String sql : deleteSql) {
+        try (PreparedStatement deleteStmt = con.prepareStatement(sql)) {
+          deleteStmt.setInt(1, person.getId());
+          deleteStmt.executeUpdate();
+        }
+      }
+
+    } catch (SQLException e) {
+      MyUtils.myExceptionHandler(e);
+    }
+  }
+
+  public void deleteSkill(Skill skill) {
+    String[] deleteSql = {
+      "DELETE FROM PersonSkills WHERE SkillID = ?;",
+      "DELETE FROM ProjectSkills WHERE SkillID = ?;",
+      "DELETE FROM Skills WHERE ID = ?;"
+    };
+
+    try (Connection con = getConnection()) {
+      for (String sql : deleteSql) {
+        try (PreparedStatement deleteStmt = con.prepareStatement(sql)) {
+          deleteStmt.setInt(1, skill.getId());
+          deleteStmt.executeUpdate();
+        }
+      }
+
+    } catch (SQLException e) {
+      MyUtils.myExceptionHandler(e);
+    }
+  }
+
+  public void deleteProject(Project project) {
+    String[] deleteSql = {
+      "DELETE FROM PersonProjects WHERE ProjectID = ?;",
+      "DELETE FROM ProjectSkills WHERE ProjectID = ?;",
+      "DELETE FROM Projects WHERE ID = ?;"
+    };
+
+    try (Connection con = getConnection()) {
+      for (String sql : deleteSql) {
+        try (PreparedStatement deleteStmt = con.prepareStatement(sql)) {
+          deleteStmt.setInt(1, project.getId());
+          deleteStmt.executeUpdate();
+        }
+      }
+
+    } catch (SQLException e) {
+      MyUtils.myExceptionHandler(e);
+    }
+  }
+
+  public boolean unlinkPersonSkill(Person person, Skill skill) {
+
+    String deleteSql = "DELETE FROM PersonSkills WHERE PersonID = ? AND SkillID = ?;";
+
+    try (Connection con = getConnection();
+        PreparedStatement deleteStmt = con.prepareStatement(deleteSql)) {
+
+      deleteStmt.setInt(1, person.getId());
+      deleteStmt.setInt(2, skill.getId());
+
+      int affectedRows = deleteStmt.executeUpdate();
+      return affectedRows > 0;
+
+    } catch (SQLException e) {
+      MyUtils.myExceptionHandler(e);
+      return false;
+    }
+  }
+
+  public boolean unlinkPersonProject(Person person, Project project) {
+
+    String deleteSql = "DELETE FROM PersonProjects WHERE PersonID = ? AND ProjectID = ?;";
+
+    try (Connection con = getConnection();
+        PreparedStatement deleteStmt = con.prepareStatement(deleteSql)) {
+
+      deleteStmt.setInt(1, person.getId());
+      deleteStmt.setInt(2, project.getId());
+
+      int affectedRows = deleteStmt.executeUpdate();
+      return affectedRows > 0;
+
+    } catch (SQLException e) {
+      MyUtils.myExceptionHandler(e);
+      return false;
+    }
+  }
+
+  public boolean unlinkProjectSkill(Project project, Skill skill) {
+
+    String deleteSql = "DELETE FROM ProjectSkills WHERE ProjectID = ? AND SkillID = ?;";
+
+    try (Connection con = getConnection();
+        PreparedStatement deleteStmt = con.prepareStatement(deleteSql)) {
+
+      deleteStmt.setInt(1, project.getId());
+      deleteStmt.setInt(2, skill.getId());
+
+      int affectedRows = deleteStmt.executeUpdate();
+      return affectedRows > 0;
+
+    } catch (SQLException e) {
+      MyUtils.myExceptionHandler(e);
+      return false;
     }
   }
 }

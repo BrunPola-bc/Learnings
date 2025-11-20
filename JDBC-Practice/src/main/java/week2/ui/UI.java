@@ -17,7 +17,7 @@ public class UI {
           \t4 - Remove rows from tables (DELETE)
           \t0 - EXIT APP
           """);
-      String input = System.console().readLine("Enter the number of your choice: ");
+      String input = getInput("Enter the number of your choice: ");
       if (input.matches("^[0-4]$")) {
         return Integer.parseInt(input);
       } else {
@@ -42,11 +42,79 @@ public class UI {
           \t7 - Show skills missing from a project
           \t0 - Back to MAIN MENU
           """);
-      String input = System.console().readLine("Enter the number of your choice: ");
+      String input = getInput("Enter the number of your choice: ");
       if (input.matches("^[0-7]$")) {
         return Integer.parseInt(input);
       } else {
         System.out.println("** INVALID SELECT OPTION INPUT! ** Please try again.");
+      }
+    }
+  }
+
+  // INSERT submenu
+  public static int chooseInsertOption() {
+    while (true) {
+      System.out.println(
+          """
+          Choose what you want to add:
+
+          \t1 - People (with skills)
+                - [also used to ADD NEW SKILLS to an existing person]
+          \t2 - Skills
+          \t3 - Projects (with required skills and assigned people)
+                - [also used to ADD NEW SKILLS and PEOPLE to an existing project]
+          \t0 - Back to MAIN MENU
+          """);
+      String input = getInput("Enter the number of your choice: ");
+      if (input.matches("^[0-3]$")) {
+        return Integer.parseInt(input);
+      } else {
+        System.out.println("** INVALID INSERT OPTION INPUT! ** Please try again.");
+      }
+    }
+  }
+
+  // UPDATE submenu
+  public static int chooseUpdateOption() {
+    while (true) {
+      System.out.println(
+          """
+          What do you want to update?
+
+          \t1 - Persons info
+          \t2 - Skill name
+          \t3 - Project name
+          \t0 - Back to MAIN MENU
+          """);
+      String input = getInput("Enter the number of your choice: ");
+      if (input.matches("^[0-3]$")) {
+        return Integer.parseInt(input);
+      } else {
+        System.out.println("** INVALID UPDATE OPTION INPUT! ** Please try again.");
+      }
+    }
+  }
+
+  // DELETE submenu
+  public static int chooseDeleteOption() {
+    while (true) {
+      System.out.println(
+          """
+          What do you want to delete?
+
+          \t1 - Person
+          \t2 - Person's Skill
+          \t3 - Skill
+          \t4 - Project
+          \t5 - Skills required for a project
+          \t6 - People assigned to a project
+          \t0 - Back to MAIN MENU
+          """);
+      String input = getInput("Enter the number of your choice: ");
+      if (input.matches("^[0-6]$")) {
+        return Integer.parseInt(input);
+      } else {
+        System.out.println("** INVALID DELETE OPTION INPUT! ** Please try again.");
       }
     }
   }
@@ -69,6 +137,14 @@ public class UI {
 
   public static void loginSuccess(String user) {
     System.out.println("Login successful! Welcome, " + user + "!");
+  }
+
+  public static String getInput(String fmt) {
+    return System.console().readLine(fmt);
+  }
+
+  public static void message(String msg) {
+    System.out.println(msg);
   }
 
   // Not too smart or clean but works for printing lists of model objects
