@@ -143,6 +143,7 @@ public class UI {
     return System.console().readLine(fmt);
   }
 
+  // For every other messages
   public static void message(String msg) {
     System.out.println(msg);
   }

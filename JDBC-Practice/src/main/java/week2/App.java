@@ -49,15 +49,15 @@ public class App {
 
         // Show ALL people, skills, or projects
         case 1 -> {
-          var people = comms.selectAllPeopleRM();
+          var people = comms.selectAllPeople();
           UI.printList(people, "All People (with RowMapper)");
         }
         case 2 -> {
-          var skills = comms.selectAllSkillsRM();
+          var skills = comms.selectAllSkills();
           UI.printList(skills, "All Skills (with RowMapper)");
         }
         case 3 -> {
-          var projects = comms.selectAllProjectsRM();
+          var projects = comms.selectAllProjects();
           UI.printList(projects, "All Projects (with RowMapper)");
         }
 
@@ -103,108 +103,13 @@ public class App {
         case 0 -> UI.returnToMainMenu();
 
         // Insert new person (with their skills)
-        case 1 -> {
-          String firstName = UI.getInput("Enter person's first name: ");
-          String lastName = UI.getInput("Enter person's last name: ");
-          Person newPerson = new Person(firstName, lastName);
-          // Not too user friendly, but I already spent a lot of time outside the scope of JDBC for
-          // this learning path
-          String skills = UI.getInput("Enter person's (new) skills [comma separated]: ");
-
-          newPerson = comms.insertNewPerson(newPerson);
-          String[] skillNames = skills.split(",");
-          int createdLinksCount = 0;
-          for (String s : skillNames) {
-            s = s.trim();
-            if (!s.isEmpty()) {
-              Skill skill = new Skill(s);
-              skill = comms.insertNewSkill(skill);
-
-              if (comms.linkPersonSkill(newPerson, skill)) {
-                createdLinksCount++;
-              }
-            }
-          }
-          UI.message(
-              "Updated "
-                  + newPerson.getFirstName()
-                  + " "
-                  + newPerson.getLastName()
-                  + " with "
-                  + createdLinksCount
-                  + " new skills.");
-        }
+        case 1 -> handleInsertNewPerson();
 
         // Insert new skill
-        case 2 -> {
-          String skillName = UI.getInput("Enter skill name: ");
-          Skill newSkill = new Skill(skillName);
-          comms.insertNewSkill(newSkill);
-          UI.message(
-              "Success: skill '"
-                  + skillName
-                  + "' is in the database."); // eather now or from before
-        }
+        case 2 -> handleInsertNewSkill();
 
         // Insert new project (with its required skills and assigned people)
-        case 3 -> {
-          String projectName = UI.getInput("Enter project name: ");
-          Project newProject = new Project(projectName);
-          newProject = comms.insertNewProject(newProject);
-
-          // Not too user friendly, but I already spent a lot of time outside the scope of JDBC
-          String skills =
-              UI.getInput("Enter (new) skills required for the project [comma separated]: ");
-          String[] skillNames = skills.split(",");
-          int createdLinksCount = 0;
-          for (String s : skillNames) {
-            s = s.trim();
-            if (!s.isEmpty()) {
-              Skill skill = new Skill(s);
-              skill = comms.insertNewSkill(skill);
-
-              if (comms.linkProjectSkill(newProject, skill)) {
-                createdLinksCount++;
-              }
-            }
-          }
-          UI.message(
-              "Updated "
-                  + createdLinksCount
-                  + " skills required for project '"
-                  + newProject.getProjectName()
-                  + "'.");
-
-          // Not too user friendly, but I already spent a lot of time outside the scope of JDBC
-          String people =
-              UI.getInput(
-                  "Enter (new) people assigned to the project [format: First Last, comma"
-                      + " separated]: ");
-          String[] personNames = people.split(",");
-          createdLinksCount = 0;
-          for (String p : personNames) {
-            p = p.trim();
-            if (!p.isEmpty()) {
-              String[] nameParts = p.split(" ");
-              if (nameParts.length == 2) {
-                String firstName = nameParts[0];
-                String lastName = nameParts[1];
-                Person person = new Person(firstName, lastName);
-                person = comms.insertNewPerson(person);
-
-                if (comms.linkPersonProject(person, newProject)) {
-                  createdLinksCount++;
-                }
-              }
-            }
-          }
-          UI.message(
-              "Updated "
-                  + createdLinksCount
-                  + " people assigned to project '"
-                  + newProject.getProjectName()
-                  + "'.");
-        }
+        case 3 -> handleInsertNewProject();
       }
     } while (insertOption != 0);
   }
@@ -219,69 +124,13 @@ public class App {
         case 0 -> UI.returnToMainMenu();
 
         // Update persons info
-        case 1 -> {
-          String firstName = UI.getInput("Enter person's CURRENT first name: ");
-          String lastName = UI.getInput("Enter person's CURRENT last name: ");
-          Person person = new Person(firstName, lastName);
-
-          person = comms.fetchPersonIfExists(person);
-          if (person == null) {
-            UI.message(
-                "Person '" + firstName + " " + lastName + "' does not exist in the database.");
-            continue;
-          }
-
-          String newFirstName = UI.getInput("Enter person's NEW first name: ");
-          String newLastName = UI.getInput("Enter person's NEW last name: ");
-          person.setFirstName(newFirstName);
-          person.setLastName(newLastName);
-          if (comms.updatePerson(person)) {
-            UI.message(
-                "Person updated successfully to '" + newFirstName + " " + newLastName + "'.");
-          } else {
-            UI.message("Failed to update person.");
-          }
-        }
+        case 1 -> handleUpdatePersonsInfo();
 
         // Update skill name
-        case 2 -> {
-          String skillName = UI.getInput("Enter CURRENT skill name: ");
-          Skill skill = new Skill(skillName);
-
-          skill = comms.fetchSkillIfExists(skill);
-          if (skill == null) {
-            UI.message("Skill '" + skillName + "' does not exist in the database.");
-            continue;
-          }
-
-          String newSkillName = UI.getInput("Enter NEW skill name: ");
-          skill.setSkillName(newSkillName);
-          if (comms.updateSkill(skill)) {
-            UI.message("Skill updated successfully to '" + newSkillName + "'.");
-          } else {
-            UI.message("Failed to update skill.");
-          }
-        }
+        case 2 -> handleUpdateSkillName();
 
         // Update project name
-        case 3 -> {
-          String projectName = UI.getInput("Enter CURRENT project name: ");
-          Project project = new Project(projectName);
-
-          project = comms.fetchProjectIfExists(project);
-          if (project == null) {
-            UI.message("Project '" + projectName + "' does not exist in the database.");
-            continue;
-          }
-
-          String newProjectName = UI.getInput("Enter NEW project name: ");
-          project.setProjectName(newProjectName);
-          if (comms.updateProject(project)) {
-            UI.message("Project updated successfully to '" + newProjectName + "'.");
-          } else {
-            UI.message("Failed to update project.");
-          }
-        }
+        case 3 -> handleUpdateProjectName();
       }
     } while (updateOption != 0);
   }
@@ -296,165 +145,346 @@ public class App {
         case 0 -> UI.returnToMainMenu();
 
         // Delete person
-        case 1 -> {
-          String firstName = UI.getInput("Enter person's first name: ");
-          String lastName = UI.getInput("Enter person's last name: ");
-          Person person = new Person(firstName, lastName);
-
-          person = comms.fetchPersonIfExists(person);
-          if (person == null) {
-            UI.message(
-                "Person '" + firstName + " " + lastName + "' does not exist in the database.");
-            continue;
-          }
-
-          comms.deletePerson(person);
-        }
+        case 1 -> handleDeletePerson();
 
         // Delete person's skills
-        case 2 -> {
-          String firstName = UI.getInput("Enter person's first name: ");
-          String lastName = UI.getInput("Enter person's last name: ");
-          Person person = new Person(firstName, lastName);
-
-          person = comms.fetchPersonIfExists(person);
-          if (person == null) {
-            UI.message(
-                "Person '" + firstName + " " + lastName + "' does not exist in the database.");
-            continue;
-          }
-
-          // Would be nice to show person's skills here before asking which to delete
-
-          String skills =
-              UI.getInput("Enter skills to delete from this person [comma separated]: ");
-
-          String[] skillNames = skills.split(",");
-          int deletedLinksCount = 0;
-          for (String s : skillNames) {
-            s = s.trim();
-            if (!s.isEmpty()) {
-              Skill skill = new Skill(s);
-              skill = comms.fetchSkillIfExists(skill);
-
-              if (skill != null && comms.unlinkPersonSkill(person, skill)) {
-                deletedLinksCount++;
-              }
-            }
-          }
-          UI.message(
-              "Deleted "
-                  + deletedLinksCount
-                  + " skills from "
-                  + person.getFirstName()
-                  + " "
-                  + person.getLastName()
-                  + ".");
-        }
+        case 2 -> handleDeletePersonsSkills();
 
         // Delete skill
-        case 3 -> {
-          String skillName = UI.getInput("Enter skill name: ");
-          Skill skill = new Skill(skillName);
-
-          skill = comms.fetchSkillIfExists(skill);
-          if (skill == null) {
-            UI.message("Skill '" + skillName + "' does not exist in the database.");
-            continue;
-          }
-
-          comms.deleteSkill(skill);
-        }
+        case 3 -> handleDeleteSkill();
 
         // Delete project
-        case 4 -> {
-          String projectName = UI.getInput("Enter project name: ");
-          Project project = new Project(projectName);
-
-          project = comms.fetchProjectIfExists(project);
-          if (project == null) {
-            UI.message("Project '" + projectName + "' does not exist in the database.");
-            continue;
-          }
-
-          comms.deleteProject(project);
-        }
+        case 4 -> handleDeleteProject();
 
         // Delete skills required for a project
-        case 5 -> {
-          String projectName = UI.getInput("Enter project name: ");
-          Project project = new Project(projectName);
-
-          project = comms.fetchProjectIfExists(project);
-          if (project == null) {
-            UI.message("Project '" + projectName + "' does not exist in the database.");
-            continue;
-          }
-
-          // Would be nice to show skills required by this project here before asking which to
-          // delete
-
-          String skills =
-              UI.getInput(
-                  "Enter skills to delete from this project requirements [comma separated]: ");
-
-          String[] skillNames = skills.split(",");
-          int deletedLinksCount = 0;
-          for (String s : skillNames) {
-            s = s.trim();
-            if (!s.isEmpty()) {
-              Skill skill = new Skill(s);
-              skill = comms.fetchSkillIfExists(skill);
-
-              if (skill != null && comms.unlinkProjectSkill(project, skill)) {
-                deletedLinksCount++;
-              }
-            }
-          }
-          UI.message(
-              "Deleted "
-                  + deletedLinksCount
-                  + " required skills from "
-                  + project.getProjectName()
-                  + ".");
-        }
+        case 5 -> handleDeleteSkillsRequiredForProject();
 
         // Delete people assigned to a project
-        case 6 -> {
-          String projectName = UI.getInput("Enter project name: ");
-          Project project = new Project(projectName);
-
-          project = comms.fetchProjectIfExists(project);
-          if (project == null) {
-            UI.message("Project '" + projectName + "' does not exist in the database.");
-            continue;
-          }
-
-          // Would be nice to show people working on this project here before asking which to delete
-
-          String people =
-              UI.getInput(
-                  "Enter people to unassign from this project [format: First Last,comma separated]:"
-                      + " ");
-
-          String[] peopleNames = people.split(",");
-          int deletedLinksCount = 0;
-          for (String p : peopleNames) {
-            p = p.trim();
-            if (!p.isEmpty()) {
-              String[] nameParts = p.split(" ");
-              Person person = new Person(nameParts[0], nameParts[1]);
-              person = comms.fetchPersonIfExists(person);
-
-              if (person != null && comms.unlinkPersonProject(person, project)) {
-                deletedLinksCount++;
-              }
-            }
-          }
-          UI.message(
-              "Deleted " + deletedLinksCount + " people from " + project.getProjectName() + ".");
-        }
+        case 6 -> handleDeletePeopleAssignedToProject();
       }
     } while (deleteOption != 0);
+  }
+
+  //////////////////////////////////////////////////////////
+  //// HERE START SPECIFIC HANDLERS FOR EACH OPERATION  ////
+  //////////////////////////////////////////////////////////
+
+  // Adds a new person or new skills to an existing person
+  static void handleInsertNewPerson() {
+    String firstName = UI.getInput("Enter person's first name: ");
+    String lastName = UI.getInput("Enter person's last name: ");
+    Person newPerson = new Person(firstName, lastName);
+    // Not too user friendly, but I already spent a lot of time outside the scope of JDBC for
+    // this learning path
+    String skills = UI.getInput("Enter person's (new) skills [comma separated]: ");
+
+    newPerson = comms.insertNewPerson(newPerson);
+    String[] skillNames = skills.split(",");
+    int createdLinksCount = 0;
+    for (String s : skillNames) {
+      s = s.trim();
+      if (!s.isEmpty()) {
+        Skill skill = new Skill(s);
+        skill = comms.insertNewSkill(skill);
+
+        if (comms.linkPersonSkill(newPerson, skill)) {
+          createdLinksCount++;
+        }
+      }
+    }
+    UI.message(
+        "Updated "
+            + newPerson.getFirstName()
+            + " "
+            + newPerson.getLastName()
+            + " with "
+            + createdLinksCount
+            + " new skills.");
+  }
+
+  // Adds new skill
+  static void handleInsertNewSkill() {
+    String skillName = UI.getInput("Enter skill name: ");
+    Skill newSkill = new Skill(skillName);
+    comms.insertNewSkill(newSkill);
+    UI.message(
+        "Success: skill '" + skillName + "' is in the database."); // eather now or from before
+  }
+
+  // Inserts new project (with its required skills and assigned people)
+  // or adds new skills and/or people to an existing project
+  static void handleInsertNewProject() {
+    String projectName = UI.getInput("Enter project name: ");
+    Project newProject = new Project(projectName);
+    newProject = comms.insertNewProject(newProject);
+
+    // Not too user friendly, but I already spent a lot of time outside the scope of JDBC
+    String skills = UI.getInput("Enter (new) skills required for the project [comma separated]: ");
+    String[] skillNames = skills.split(",");
+    int createdLinksCount = 0;
+    for (String s : skillNames) {
+      s = s.trim();
+      if (!s.isEmpty()) {
+        Skill skill = new Skill(s);
+        skill = comms.insertNewSkill(skill);
+
+        if (comms.linkProjectSkill(newProject, skill)) {
+          createdLinksCount++;
+        }
+      }
+    }
+    UI.message(
+        "Updated "
+            + createdLinksCount
+            + " skills required for project '"
+            + newProject.getProjectName()
+            + "'.");
+
+    // Not too user friendly, but I already spent a lot of time outside the scope of JDBC
+    String people =
+        UI.getInput(
+            "Enter (new) people assigned to the project [format: First Last, comma"
+                + " separated]: ");
+    String[] personNames = people.split(",");
+    createdLinksCount = 0;
+    for (String p : personNames) {
+      p = p.trim();
+      if (!p.isEmpty()) {
+        String[] nameParts = p.split(" ");
+        if (nameParts.length == 2) {
+          String firstName = nameParts[0];
+          String lastName = nameParts[1];
+          Person person = new Person(firstName, lastName);
+          person = comms.insertNewPerson(person);
+
+          if (comms.linkPersonProject(person, newProject)) {
+            createdLinksCount++;
+          }
+        }
+      }
+    }
+    UI.message(
+        "Updated "
+            + createdLinksCount
+            + " people assigned to project '"
+            + newProject.getProjectName()
+            + "'.");
+  }
+
+  // Updates person's info
+  static void handleUpdatePersonsInfo() {
+    String firstName = UI.getInput("Enter person's CURRENT first name: ");
+    String lastName = UI.getInput("Enter person's CURRENT last name: ");
+    Person person = new Person(firstName, lastName);
+
+    person = comms.fetchPersonIfExists(person);
+    if (person == null) {
+      UI.message("Person '" + firstName + " " + lastName + "' does not exist in the database.");
+      return;
+    }
+
+    String newFirstName = UI.getInput("Enter person's NEW first name: ");
+    String newLastName = UI.getInput("Enter person's NEW last name: ");
+    person.setFirstName(newFirstName);
+    person.setLastName(newLastName);
+    if (comms.updatePerson(person)) {
+      UI.message("Person updated successfully to '" + newFirstName + " " + newLastName + "'.");
+    } else {
+      UI.message("Failed to update person.");
+    }
+  }
+
+  // Updates existing skills name
+  static void handleUpdateSkillName() {
+    String skillName = UI.getInput("Enter CURRENT skill name: ");
+    Skill skill = new Skill(skillName);
+
+    skill = comms.fetchSkillIfExists(skill);
+    if (skill == null) {
+      UI.message("Skill '" + skillName + "' does not exist in the database.");
+      return;
+    }
+
+    String newSkillName = UI.getInput("Enter NEW skill name: ");
+    skill.setSkillName(newSkillName);
+    if (comms.updateSkill(skill)) {
+      UI.message("Skill updated successfully to '" + newSkillName + "'.");
+    } else {
+      UI.message("Failed to update skill.");
+    }
+  }
+
+  // Updates existing project's name
+  static void handleUpdateProjectName() {
+    String projectName = UI.getInput("Enter CURRENT project name: ");
+    Project project = new Project(projectName);
+
+    project = comms.fetchProjectIfExists(project);
+    if (project == null) {
+      UI.message("Project '" + projectName + "' does not exist in the database.");
+      return;
+    }
+
+    String newProjectName = UI.getInput("Enter NEW project name: ");
+    project.setProjectName(newProjectName);
+    if (comms.updateProject(project)) {
+      UI.message("Project updated successfully to '" + newProjectName + "'.");
+    } else {
+      UI.message("Failed to update project.");
+    }
+  }
+
+  // Deletes a person with all their skill and project links
+  static void handleDeletePerson() {
+    String firstName = UI.getInput("Enter person's first name: ");
+    String lastName = UI.getInput("Enter person's last name: ");
+    Person person = new Person(firstName, lastName);
+
+    person = comms.fetchPersonIfExists(person);
+    if (person == null) {
+      UI.message("Person '" + firstName + " " + lastName + "' does not exist in the database.");
+      return;
+    }
+
+    comms.deletePerson(person);
+    UI.message("Person '" + firstName + " " + lastName + "' deleted successfully.");
+  }
+
+  // Deletes specified skills linked to a person
+  static void handleDeletePersonsSkills() {
+    String firstName = UI.getInput("Enter person's first name: ");
+    String lastName = UI.getInput("Enter person's last name: ");
+    Person person = new Person(firstName, lastName);
+
+    person = comms.fetchPersonIfExists(person);
+    if (person == null) {
+      UI.message("Person '" + firstName + " " + lastName + "' does not exist in the database.");
+      return;
+    }
+
+    // Would be nice to show person's skills here before asking which to delete
+
+    String skills = UI.getInput("Enter skills to delete from this person [comma separated]: ");
+
+    String[] skillNames = skills.split(",");
+    int deletedLinksCount = 0;
+    for (String s : skillNames) {
+      s = s.trim();
+      if (!s.isEmpty()) {
+        Skill skill = new Skill(s);
+        skill = comms.fetchSkillIfExists(skill);
+
+        if (skill != null && comms.unlinkPersonSkill(person, skill)) {
+          deletedLinksCount++;
+        }
+      }
+    }
+    UI.message(
+        "Deleted "
+            + deletedLinksCount
+            + " skills from "
+            + person.getFirstName()
+            + " "
+            + person.getLastName()
+            + ".");
+  }
+
+  // Deletes a skill with all its person and project links
+  static void handleDeleteSkill() {
+    String skillName = UI.getInput("Enter skill name: ");
+    Skill skill = new Skill(skillName);
+
+    skill = comms.fetchSkillIfExists(skill);
+    if (skill == null) {
+      UI.message("Skill '" + skillName + "' does not exist in the database.");
+      return;
+    }
+
+    comms.deleteSkill(skill);
+    UI.message("Skill '" + skillName + "' deleted successfully.");
+  }
+
+  // Deletes a project with all its required skills and assigned people links
+  static void handleDeleteProject() {
+    String projectName = UI.getInput("Enter project name: ");
+    Project project = new Project(projectName);
+
+    project = comms.fetchProjectIfExists(project);
+    if (project == null) {
+      UI.message("Project '" + projectName + "' does not exist in the database.");
+      return;
+    }
+
+    comms.deleteProject(project);
+    UI.message("Project '" + projectName + "' deleted successfully.");
+  }
+
+  // Deletes specified skills required by a project
+  static void handleDeleteSkillsRequiredForProject() {
+    String projectName = UI.getInput("Enter project name: ");
+    Project project = new Project(projectName);
+
+    project = comms.fetchProjectIfExists(project);
+    if (project == null) {
+      UI.message("Project '" + projectName + "' does not exist in the database.");
+      return;
+    }
+
+    // Would be nice to show skills required by this project here before asking which to
+    // delete
+
+    String skills =
+        UI.getInput("Enter skills to delete from this project requirements [comma separated]: ");
+
+    String[] skillNames = skills.split(",");
+    int deletedLinksCount = 0;
+    for (String s : skillNames) {
+      s = s.trim();
+      if (!s.isEmpty()) {
+        Skill skill = new Skill(s);
+        skill = comms.fetchSkillIfExists(skill);
+
+        if (skill != null && comms.unlinkProjectSkill(project, skill)) {
+          deletedLinksCount++;
+        }
+      }
+    }
+    UI.message(
+        "Deleted " + deletedLinksCount + " required skills from " + project.getProjectName() + ".");
+  }
+
+  // Deletes specified people assigned to a project
+  static void handleDeletePeopleAssignedToProject() {
+    String projectName = UI.getInput("Enter project name: ");
+    Project project = new Project(projectName);
+
+    project = comms.fetchProjectIfExists(project);
+    if (project == null) {
+      UI.message("Project '" + projectName + "' does not exist in the database.");
+      return;
+    }
+
+    // Would be nice to show people working on this project here before asking which to delete
+
+    String people =
+        UI.getInput(
+            "Enter people to unassign from this project [format: First Last,comma separated]:"
+                + " ");
+
+    String[] peopleNames = people.split(",");
+    int deletedLinksCount = 0;
+    for (String p : peopleNames) {
+      p = p.trim();
+      if (!p.isEmpty()) {
+        String[] nameParts = p.split(" ");
+        Person person = new Person(nameParts[0], nameParts[1]);
+        person = comms.fetchPersonIfExists(person);
+
+        if (person != null && comms.unlinkPersonProject(person, project)) {
+          deletedLinksCount++;
+        }
+      }
+    }
+    UI.message("Deleted " + deletedLinksCount + " people from " + project.getProjectName() + ".");
   }
 }

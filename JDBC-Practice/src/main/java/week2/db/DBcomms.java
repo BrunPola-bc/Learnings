@@ -2,7 +2,6 @@ package week2.db;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -11,6 +10,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 import week2.model.Person;
 import week2.model.Project;
@@ -50,61 +50,6 @@ public class DBcomms {
     return DriverManager.getConnection(url, user, password);
   }
 
-  // [OLD] - theres new methods below that use RowMapper to avoid code duplication
-  public List<Person> selectAllPeople() {
-    List<Person> people = new ArrayList<>();
-    String query = "SELECT ID, FirstName, LastName FROM People";
-
-    try (Connection con = getConnection();
-        Statement stmt = con.createStatement();
-        ResultSet rs = stmt.executeQuery(query)) {
-      while (rs.next()) {
-        Person person =
-            new Person(rs.getInt("ID"), rs.getString("FirstName"), rs.getString("LastName"));
-        people.add(person);
-      }
-    } catch (SQLException e) {
-      MyUtils.myExceptionHandler(e);
-    }
-    return people;
-  }
-
-  // [OLD] - theres new methods below that use RowMapper to avoid code duplication
-  public List<Skill> selectAllSkills() {
-    List<Skill> skills = new ArrayList<>();
-    String query = "SELECT ID, SkillName FROM Skills";
-
-    try (Connection con = getConnection();
-        Statement stmt = con.createStatement();
-        ResultSet rs = stmt.executeQuery(query)) {
-      while (rs.next()) {
-        Skill skill = new Skill(rs.getInt("ID"), rs.getString("SkillName"));
-        skills.add(skill);
-      }
-    } catch (SQLException e) {
-      MyUtils.myExceptionHandler(e);
-    }
-    return skills;
-  }
-
-  // [OLD] - theres new methods below that use RowMapper to avoid code duplication
-  public List<Project> selectAllProjects() {
-    List<Project> projects = new ArrayList<>();
-    String query = "SELECT ID, ProjectName FROM Projects";
-
-    try (Connection con = getConnection();
-        Statement stmt = con.createStatement();
-        ResultSet rs = stmt.executeQuery(query)) {
-      while (rs.next()) {
-        Project project = new Project(rs.getInt("ID"), rs.getString("ProjectName"));
-        projects.add(project);
-      }
-    } catch (SQLException e) {
-      MyUtils.myExceptionHandler(e);
-    }
-    return projects;
-  }
-
   // Looked into RowMapper pattern to reduce code duplication
   // I guess I got too far out of "Introduction to JDBC" for this week
   private <T> List<T> queryResultList(String sql, RowMapper<T> mapper) {
@@ -125,17 +70,17 @@ public class DBcomms {
     return results;
   }
 
-  public List<Person> selectAllPeopleRM() {
+  public List<Person> selectAllPeople() {
     String sql = "SELECT ID, FirstName, LastName FROM People";
     return queryResultList(sql, new PersonMapper());
   }
 
-  public List<Skill> selectAllSkillsRM() {
+  public List<Skill> selectAllSkills() {
     String sql = "SELECT ID, SkillName FROM Skills";
     return queryResultList(sql, new SkillMapper());
   }
 
-  public List<Project> selectAllProjectsRM() {
+  public List<Project> selectAllProjects() {
     String sql = "SELECT ID, ProjectName FROM Projects";
     return queryResultList(sql, new ProjectMapper());
   }
@@ -173,9 +118,10 @@ public class DBcomms {
       stmt.setInt(1, linkId);
       try (ResultSet rs = stmt.executeQuery()) {
 
+        PersonMapper mapper = new PersonMapper();
+
         while (rs.next()) {
-          Person person =
-              new Person(rs.getInt("ID"), rs.getString("FirstName"), rs.getString("LastName"));
+          Person person = mapper.map(rs);
           people.add(person);
         }
 
@@ -199,12 +145,16 @@ public class DBcomms {
 
   // Generalised from getSkillIdByName and getProjectIdByName
   private int getIdByName(String tableName, String columnName, String Name) {
+
     if (!MyUtils.isSafeIdentifier(tableName) || !MyUtils.isSafeIdentifier(columnName)) {
       return -1;
     }
+
     String query = "SELECT ID FROM " + tableName + " WHERE " + columnName + " = ?;";
+
     try (Connection con = getConnection();
         PreparedStatement stmt = con.prepareStatement(query)) {
+
       stmt.setString(1, Name);
 
       try (ResultSet rs = stmt.executeQuery()) {
@@ -221,99 +171,104 @@ public class DBcomms {
     }
   }
 
-  // This function uses a stored procedure I wrote in Week1.sql
-  // but the procedure doesn't differentiate between search term matching a skill or project
-  // and it returns a person twice if it matches both
-  public void searchPeople1(String searchTerm) {
-    try (Connection con = getConnection();
-        CallableStatement stmt = con.prepareCall("{CALL SearchPeople(?)}")) {
+  /* Here are my various attempts at implementing searchPeople functionality
+    that shows people along with every matched term in eather skills or projects.
+    Unused but kept to show my tought process and query evolution
 
-      stmt.setString(1, searchTerm);
+    // This function uses a stored procedure I wrote in Week1.sql
+    // but the procedure doesn't differentiate between search term matching a skill or project
+    // and it returns a person twice if it matches both
+    public void searchPeople1(String searchTerm) {
+      try (Connection con = getConnection();
+          CallableStatement stmt = con.prepareCall("{CALL SearchPeople(?)}")) {
 
-      try (ResultSet rs = stmt.executeQuery()) {
-        MyUtils.showResultSet(rs);
+        stmt.setString(1, searchTerm);
+
+        try (ResultSet rs = stmt.executeQuery()) {
+          MyUtils.showResultSet(rs);
+        }
+      } catch (SQLException e) {
+        MyUtils.myExceptionHandler(e);
       }
-    } catch (SQLException e) {
-      MyUtils.myExceptionHandler(e);
     }
-  }
 
-  // Added distinction between skill and project matches
-  // People still show multiple times because it's possible to match multiple skills/projects
-  public void searchPeople2(String searchTerm) {
+    // Added distinction between skill and project matches
+    // People still show multiple times because it's possible to match multiple skills/projects
+    public void searchPeople2(String searchTerm) {
 
-    searchTerm = "%" + searchTerm + "%";
+      searchTerm = "%" + searchTerm + "%";
 
-    String query =
-        """
-        SELECT p.FirstName, p.LastName, "SKILL" AS 'Matched Category', s.SkillName AS 'Search Match'
-        FROM People p
-        JOIN PersonSkills ps ON p.ID = ps.PersonID
-        JOIN Skills s ON ps.SkillID = s.ID
-        WHERE s.SkillName LIKE ?
-        UNION
-        SELECT p.FirstName, p.LastName, "PROJECT", pr.ProjectName
-        FROM People p
-        JOIN PersonProjects pp ON p.ID = pp.PersonID
-        JOIN Projects pr ON pp.ProjectID = pr.ID
-        WHERE pr.ProjectName LIKE ?
-        ORDER BY 2,1,3
-        """;
+      String query =
+          """
+          SELECT p.FirstName, p.LastName, "SKILL" AS 'Matched Category', s.SkillName AS 'Search Match'
+          FROM People p
+          JOIN PersonSkills ps ON p.ID = ps.PersonID
+          JOIN Skills s ON ps.SkillID = s.ID
+          WHERE s.SkillName LIKE ?
+          UNION
+          SELECT p.FirstName, p.LastName, "PROJECT", pr.ProjectName
+          FROM People p
+          JOIN PersonProjects pp ON p.ID = pp.PersonID
+          JOIN Projects pr ON pp.ProjectID = pr.ID
+          WHERE pr.ProjectName LIKE ?
+          ORDER BY 2,1,3
+          """;
 
-    try (Connection con = getConnection();
-        PreparedStatement stmt = con.prepareStatement(query)) {
+      try (Connection con = getConnection();
+          PreparedStatement stmt = con.prepareStatement(query)) {
 
-      stmt.setString(1, searchTerm);
-      stmt.setString(2, searchTerm);
+        stmt.setString(1, searchTerm);
+        stmt.setString(2, searchTerm);
 
-      try (ResultSet rs = stmt.executeQuery()) {
-        MyUtils.showResultSet(rs);
+        try (ResultSet rs = stmt.executeQuery()) {
+          MyUtils.showResultSet(rs);
+        }
+      } catch (SQLException e) {
+        MyUtils.myExceptionHandler(e);
       }
-    } catch (SQLException e) {
-      MyUtils.myExceptionHandler(e);
     }
-  }
 
-  // Another option to test out GROUP_CONCAT functionality
-  // This way each person should show up only once
-  // -->  Still not ideal since there's left joins starting from People,
-  //      and is filtered by HAVING ... IS NOT NULL
-  public void searchPeople3(String searchTerm) {
+    // Another option to test out GROUP_CONCAT functionality
+    // This way each person should show up only once
+    // -->  Still not ideal since there's left joins starting from People,
+    //      and is filtered by HAVING ... IS NOT NULL
+    public void searchPeople3(String searchTerm) {
 
-    searchTerm = "%" + searchTerm + "%";
+      searchTerm = "%" + searchTerm + "%";
 
-    String query =
-        """
-        SELECT  p.FirstName,
-                p.LastName,
-                GROUP_CONCAT(DISTINCT s.SkillName) AS Matched_Skills,
-                GROUP_CONCAT(DISTINCT pr.ProjectName) AS Matched_Projects
-        FROM People p
-        LEFT JOIN PersonSkills ps ON p.ID = ps.PersonID
-        LEFT JOIN Skills s  ON ps.SkillID = s.ID
-                            AND s.SkillName LIKE ?
-        LEFT JOIN PersonProjects pp ON p.ID = pp.PersonID
-        LEFT JOIN Projects pr ON pp.ProjectID = pr.ID
-                              AND pr.ProjectName LIKE ?
-        GROUP BY p.ID
-        HAVING Matched_Skills IS NOT NULL
-            OR Matched_Projects IS NOT NULL
-        ORDER BY 2,1,3
-        """;
+      String query =
+          """
+          SELECT  p.FirstName,
+                  p.LastName,
+                  GROUP_CONCAT(DISTINCT s.SkillName) AS Matched_Skills,
+                  GROUP_CONCAT(DISTINCT pr.ProjectName) AS Matched_Projects
+          FROM People p
+          LEFT JOIN PersonSkills ps ON p.ID = ps.PersonID
+          LEFT JOIN Skills s  ON ps.SkillID = s.ID
+                              AND s.SkillName LIKE ?
+          LEFT JOIN PersonProjects pp ON p.ID = pp.PersonID
+          LEFT JOIN Projects pr ON pp.ProjectID = pr.ID
+                                AND pr.ProjectName LIKE ?
+          GROUP BY p.ID
+          HAVING Matched_Skills IS NOT NULL
+              OR Matched_Projects IS NOT NULL
+          ORDER BY 2,1,3
+          """;
 
-    try (Connection con = getConnection();
-        PreparedStatement stmt = con.prepareStatement(query)) {
+      try (Connection con = getConnection();
+          PreparedStatement stmt = con.prepareStatement(query)) {
 
-      stmt.setString(1, searchTerm);
-      stmt.setString(2, searchTerm);
+        stmt.setString(1, searchTerm);
+        stmt.setString(2, searchTerm);
 
-      try (ResultSet rs = stmt.executeQuery()) {
-        MyUtils.showResultSet(rs);
+        try (ResultSet rs = stmt.executeQuery()) {
+          MyUtils.showResultSet(rs);
+        }
+      } catch (SQLException e) {
+        MyUtils.myExceptionHandler(e);
       }
-    } catch (SQLException e) {
-      MyUtils.myExceptionHandler(e);
     }
-  }
+  */
 
   // Giving up on the idea of showing what skills/projects matched the search term
   // Just showing people that have either a matching skill or project
@@ -345,9 +300,10 @@ public class DBcomms {
 
       try (ResultSet rs = stmt.executeQuery()) {
 
+        PersonMapper mapper = new PersonMapper();
+
         while (rs.next()) {
-          Person person =
-              new Person(rs.getInt("ID"), rs.getString("FirstName"), rs.getString("LastName"));
+          Person person = mapper.map(rs);
           people.add(person);
         }
 
@@ -392,8 +348,10 @@ public class DBcomms {
       stmt.setString(1, projectName);
 
       try (ResultSet rs = stmt.executeQuery()) {
+        SkillMapper mapper = new SkillMapper();
+
         while (rs.next()) {
-          Skill skill = new Skill(rs.getInt("ID"), rs.getString("SkillName"));
+          Skill skill = mapper.map(rs);
           missingSkills.add(skill);
         }
 
@@ -405,20 +363,24 @@ public class DBcomms {
     }
   }
 
-  public Person fetchPersonIfExists(Person person) {
-
-    // Assuming FirstName + LastName uniquely identifies a person for simplicity
-    // real database would have an email/username/OIB
-    String checkSql = "SELECT ID FROM People WHERE FirstName = ? AND LastName = ?;";
+  // Generalised fetchIfExists method to reduce code duplication
+  //
+  // SqlConsumer is a functional interface similar to java.util.function.Consumer
+  // but it allows throwing SQLException from the accept method.
+  //
+  // This makes fetch[Entity]IfExists methods cleaner
+  // (setting parameters by Consumer would require try-catch blocks in every lambda)
+  public <T> T fetchIfExists(
+      String Sql, SqlConsumer<PreparedStatement> paramSetter, RowMapper<T> mapper) {
 
     try (Connection con = getConnection();
-        PreparedStatement checkStmt = con.prepareStatement(checkSql)) {
-      checkStmt.setString(1, person.getFirstName());
-      checkStmt.setString(2, person.getLastName());
+        PreparedStatement stmt = con.prepareStatement(Sql)) {
 
-      try (ResultSet rs = checkStmt.executeQuery()) {
+      paramSetter.accept(stmt);
+
+      try (ResultSet rs = stmt.executeQuery()) {
         if (rs.next()) {
-          return new Person(rs.getInt("ID"), person.getFirstName(), person.getLastName());
+          return mapper.map(rs);
         }
       }
 
@@ -428,244 +390,180 @@ public class DBcomms {
     return null;
   }
 
-  public Person insertNewPerson(Person person) {
+  public Person fetchPersonIfExists(Person person) {
 
-    Person existingPerson = fetchPersonIfExists(person);
-    if (existingPerson != null) {
-      return existingPerson;
-    }
-
-    String insertSql = "INSERT INTO People (FirstName, LastName) VALUES (?, ?);";
-
-    try (Connection con = getConnection();
-        PreparedStatement insertStmt =
-            con.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
-
-      insertStmt.setString(1, person.getFirstName());
-      insertStmt.setString(2, person.getLastName());
-
-      insertStmt.executeUpdate();
-      try (ResultSet keys = insertStmt.getGeneratedKeys()) {
-        if (keys.next()) {
-          int newId = keys.getInt(1);
-          return new Person(newId, person.getFirstName(), person.getLastName());
-        }
-      }
-
-      throw new RuntimeException("Insert new person succeeded BUT ** no ID obtained **");
-
-    } catch (SQLException e) {
-      MyUtils.myExceptionHandler(e);
-      return null;
-    }
+    // Assuming FirstName + LastName uniquely identifies a person for simplicity
+    // real database would have an email/username/OIB
+    return fetchIfExists(
+        "SELECT ID, FirstName, LastName FROM People WHERE FirstName = ? AND LastName = ?;",
+        stmt -> {
+          stmt.setString(1, person.getFirstName());
+          stmt.setString(2, person.getLastName());
+        },
+        new PersonMapper());
   }
 
   public Skill fetchSkillIfExists(Skill skill) {
 
-    String checkSql = "SELECT ID FROM Skills WHERE SkillName = ?;";
-    try (Connection con = getConnection();
-        PreparedStatement checkStmt = con.prepareStatement(checkSql)) {
-      checkStmt.setString(1, skill.getSkillName());
+    return fetchIfExists(
+        "SELECT ID, SkillName FROM Skills WHERE SkillName = ?;",
+        stmt -> stmt.setString(1, skill.getSkillName()),
+        new SkillMapper());
+  }
 
-      try (ResultSet rs = checkStmt.executeQuery()) {
-        if (rs.next()) {
-          return new Skill(rs.getInt("ID"), skill.getSkillName());
+  public Project fetchProjectIfExists(Project project) {
+
+    return fetchIfExists(
+        "SELECT ID, ProjectName FROM Projects WHERE ProjectName = ?;",
+        stmt -> stmt.setString(1, project.getProjectName()),
+        new ProjectMapper());
+  }
+
+  // Generalised insert method that returns generated ID to reduce code duplication
+  public Optional<Integer> insertAndReturnId(
+      String sql, SqlConsumer<PreparedStatement> paramSetter) {
+
+    try (Connection con = getConnection();
+        PreparedStatement stmt = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+      paramSetter.accept(stmt);
+      stmt.executeUpdate();
+
+      try (ResultSet keys = stmt.getGeneratedKeys()) {
+        if (keys.next()) {
+          return Optional.of(keys.getInt(1));
         }
       }
+
+      throw new RuntimeException("Insert succeeded BUT ** no ID obtained **");
 
     } catch (SQLException e) {
       MyUtils.myExceptionHandler(e);
     }
+
+    return Optional.empty();
+  }
+
+  public Person insertNewPerson(Person person) {
+
+    Person existing = fetchPersonIfExists(person);
+    if (existing != null) return existing;
+
+    Optional<Integer> newId =
+        insertAndReturnId(
+            "INSERT INTO People (FirstName, LastName) VALUES (?, ?);",
+            stmt -> {
+              stmt.setString(1, person.getFirstName());
+              stmt.setString(2, person.getLastName());
+            });
+
+    if (newId.isPresent()) {
+      return new Person(newId.get(), person.getFirstName(), person.getLastName());
+    }
+
     return null;
   }
 
   public Skill insertNewSkill(Skill skill) {
 
-    Skill existingSkill = fetchSkillIfExists(skill);
-    if (existingSkill != null) {
-      return existingSkill;
+    Skill existing = fetchSkillIfExists(skill);
+    if (existing != null) return existing;
+
+    Optional<Integer> newId =
+        insertAndReturnId(
+            "INSERT INTO Skills (SkillName) VALUES (?);",
+            stmt -> stmt.setString(1, skill.getSkillName()));
+
+    if (newId.isPresent()) {
+      return new Skill(newId.get(), skill.getSkillName());
     }
 
-    String insertSql = "INSERT INTO Skills (SkillName) VALUES (?);";
-
-    try (Connection con = getConnection();
-        PreparedStatement insertStmt =
-            con.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
-
-      insertStmt.setString(1, skill.getSkillName());
-
-      insertStmt.executeUpdate();
-      try (ResultSet keys = insertStmt.getGeneratedKeys()) {
-        if (keys.next()) {
-          int newId = keys.getInt(1);
-          return new Skill(newId, skill.getSkillName());
-        }
-      }
-
-      throw new RuntimeException("Insert new skill succeeded BUT ** no ID obtained **");
-
-    } catch (SQLException e) {
-      MyUtils.myExceptionHandler(e);
-      return null;
-    }
-  }
-
-  public Project fetchProjectIfExists(Project project) {
-
-    String checkSql = "SELECT ID FROM Projects WHERE ProjectName = ?;";
-    try (Connection con = getConnection();
-        PreparedStatement checkStmt = con.prepareStatement(checkSql)) {
-      checkStmt.setString(1, project.getProjectName());
-
-      try (ResultSet rs = checkStmt.executeQuery()) {
-        if (rs.next()) {
-          return new Project(rs.getInt("ID"), project.getProjectName());
-        }
-      }
-
-    } catch (SQLException e) {
-      MyUtils.myExceptionHandler(e);
-    }
     return null;
   }
 
   public Project insertNewProject(Project project) {
 
-    Project existingProject = fetchProjectIfExists(project);
-    if (existingProject != null) {
-      return existingProject;
+    Project existing = fetchProjectIfExists(project);
+    if (existing != null) return existing;
+
+    Optional<Integer> newId =
+        insertAndReturnId(
+            "INSERT INTO Projects (ProjectName) VALUES (?);",
+            stmt -> stmt.setString(1, project.getProjectName()));
+
+    if (newId.isPresent()) {
+      return new Project(newId.get(), project.getProjectName());
     }
 
-    String insertSql = "INSERT INTO Projects (ProjectName) VALUES (?);";
-
-    try (Connection con = getConnection();
-        PreparedStatement insertStmt =
-            con.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
-
-      insertStmt.setString(1, project.getProjectName());
-
-      insertStmt.executeUpdate();
-      try (ResultSet keys = insertStmt.getGeneratedKeys()) {
-        if (keys.next()) {
-          int newId = keys.getInt(1);
-          return new Project(newId, project.getProjectName());
-        }
-      }
-
-      throw new RuntimeException("Insert new project succeeded BUT ** no ID obtained **");
-
-    } catch (SQLException e) {
-      MyUtils.myExceptionHandler(e);
-      return null;
-    }
+    return null;
   }
 
-  public boolean linkPersonSkill(Person person, Skill skill) {
-
-    String insertSql = "INSERT IGNORE INTO PersonSkills (PersonID, SkillID) VALUES (?, ?);";
+  // Generalised update method to reduce code duplication
+  public boolean update(String sql, SqlConsumer<PreparedStatement> paramSetter) {
 
     try (Connection con = getConnection();
-        PreparedStatement insertStmt = con.prepareStatement(insertSql)) {
+        PreparedStatement updateStmt = con.prepareStatement(sql)) {
 
-      insertStmt.setInt(1, person.getId());
-      insertStmt.setInt(2, skill.getId());
-
-      int affectedRows = insertStmt.executeUpdate();
-      return affectedRows > 0;
+      paramSetter.accept(updateStmt);
+      return updateStmt.executeUpdate() > 0;
 
     } catch (SQLException e) {
       MyUtils.myExceptionHandler(e);
-      return false;
     }
-  }
-
-  public boolean linkProjectSkill(Project project, Skill skill) {
-
-    String insertSql = "INSERT IGNORE INTO ProjectSkills (ProjectID, SkillID) VALUES (?, ?);";
-
-    try (Connection con = getConnection();
-        PreparedStatement insertStmt = con.prepareStatement(insertSql)) {
-
-      insertStmt.setInt(1, project.getId());
-      insertStmt.setInt(2, skill.getId());
-
-      int affectedRows = insertStmt.executeUpdate();
-      return affectedRows > 0;
-
-    } catch (SQLException e) {
-      MyUtils.myExceptionHandler(e);
-      return false;
-    }
-  }
-
-  public boolean linkPersonProject(Person person, Project project) {
-
-    String insertSql = "INSERT IGNORE INTO PersonProjects (PersonID, ProjectID) VALUES (?, ?);";
-
-    try (Connection con = getConnection();
-        PreparedStatement insertStmt = con.prepareStatement(insertSql)) {
-
-      insertStmt.setInt(1, person.getId());
-      insertStmt.setInt(2, project.getId());
-
-      int affectedRows = insertStmt.executeUpdate();
-      return affectedRows > 0;
-
-    } catch (SQLException e) {
-      MyUtils.myExceptionHandler(e);
-      return false;
-    }
+    return false;
   }
 
   public boolean updatePerson(Person person) {
-    String updateSql = "UPDATE People SET FirstName = ?, LastName = ? WHERE ID = ?;";
-    try (Connection con = getConnection();
-        PreparedStatement updateStmt = con.prepareStatement(updateSql)) {
-
-      updateStmt.setString(1, person.getFirstName());
-      updateStmt.setString(2, person.getLastName());
-      updateStmt.setInt(3, person.getId());
-
-      int affectedRows = updateStmt.executeUpdate();
-      return affectedRows > 0;
-
-    } catch (SQLException e) {
-      MyUtils.myExceptionHandler(e);
-      return false;
-    }
+    return update(
+        "UPDATE People SET FirstName = ?, LastName = ? WHERE ID = ?;",
+        stmt -> {
+          stmt.setString(1, person.getFirstName());
+          stmt.setString(2, person.getLastName());
+          stmt.setInt(3, person.getId());
+        });
   }
 
   public boolean updateSkill(Skill skill) {
-    String updateSql = "UPDATE Skills SET SkillName = ? WHERE ID = ?;";
-    try (Connection con = getConnection();
-        PreparedStatement updateStmt = con.prepareStatement(updateSql)) {
 
-      updateStmt.setString(1, skill.getSkillName());
-      updateStmt.setInt(2, skill.getId());
-
-      int affectedRows = updateStmt.executeUpdate();
-      return affectedRows > 0;
-
-    } catch (SQLException e) {
-      MyUtils.myExceptionHandler(e);
-      return false;
-    }
+    return update(
+        "UPDATE Skills SET SkillName = ? WHERE ID = ?;",
+        stmt -> {
+          stmt.setString(1, skill.getSkillName());
+          stmt.setInt(2, skill.getId());
+        });
   }
 
   public boolean updateProject(Project project) {
-    String updateSql = "UPDATE Projects SET ProjectName = ? WHERE ID = ?;";
-    try (Connection con = getConnection();
-        PreparedStatement updateStmt = con.prepareStatement(updateSql)) {
+    return update(
+        "UPDATE Projects SET ProjectName = ? WHERE ID = ?;",
+        stmt -> {
+          stmt.setString(1, project.getProjectName());
+          stmt.setInt(2, project.getId());
+        });
+  }
 
-      updateStmt.setString(1, project.getProjectName());
-      updateStmt.setInt(2, project.getId());
+  public void deleteEntity(String[] sqls, int id) {
 
-      int affectedRows = updateStmt.executeUpdate();
-      return affectedRows > 0;
+    try (Connection con = getConnection()) {
+
+      con.setAutoCommit(false);
+      try {
+        for (String sql : sqls) {
+          try (PreparedStatement stmt = con.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            stmt.executeUpdate();
+          }
+        }
+        con.commit();
+      } catch (SQLException e) {
+        con.rollback();
+        throw e;
+      } finally {
+        con.setAutoCommit(true);
+      }
 
     } catch (SQLException e) {
       MyUtils.myExceptionHandler(e);
-      return false;
     }
   }
 
@@ -676,17 +574,7 @@ public class DBcomms {
       "DELETE FROM People WHERE ID = ?;"
     };
 
-    try (Connection con = getConnection()) {
-      for (String sql : deleteSql) {
-        try (PreparedStatement deleteStmt = con.prepareStatement(sql)) {
-          deleteStmt.setInt(1, person.getId());
-          deleteStmt.executeUpdate();
-        }
-      }
-
-    } catch (SQLException e) {
-      MyUtils.myExceptionHandler(e);
-    }
+    deleteEntity(deleteSql, person.getId());
   }
 
   public void deleteSkill(Skill skill) {
@@ -696,17 +584,7 @@ public class DBcomms {
       "DELETE FROM Skills WHERE ID = ?;"
     };
 
-    try (Connection con = getConnection()) {
-      for (String sql : deleteSql) {
-        try (PreparedStatement deleteStmt = con.prepareStatement(sql)) {
-          deleteStmt.setInt(1, skill.getId());
-          deleteStmt.executeUpdate();
-        }
-      }
-
-    } catch (SQLException e) {
-      MyUtils.myExceptionHandler(e);
-    }
+    deleteEntity(deleteSql, skill.getId());
   }
 
   public void deleteProject(Project project) {
@@ -716,73 +594,66 @@ public class DBcomms {
       "DELETE FROM Projects WHERE ID = ?;"
     };
 
-    try (Connection con = getConnection()) {
-      for (String sql : deleteSql) {
-        try (PreparedStatement deleteStmt = con.prepareStatement(sql)) {
-          deleteStmt.setInt(1, project.getId());
-          deleteStmt.executeUpdate();
-        }
-      }
+    deleteEntity(deleteSql, project.getId());
+  }
+
+  // Generalised method to link two entities in a junction table
+  public boolean linkOrUnlinkEntities(String sql, int id1, int id2) {
+
+    try (Connection con = getConnection();
+        PreparedStatement insertStmt = con.prepareStatement(sql)) {
+
+      insertStmt.setInt(1, id1);
+      insertStmt.setInt(2, id2);
+
+      int affectedRows = insertStmt.executeUpdate();
+      return affectedRows > 0;
 
     } catch (SQLException e) {
       MyUtils.myExceptionHandler(e);
+      return false;
     }
+  }
+
+  public boolean linkPersonSkill(Person person, Skill skill) {
+    return linkOrUnlinkEntities(
+        "INSERT IGNORE INTO PersonSkills (PersonID, SkillID) VALUES (?, ?);",
+        person.getId(),
+        skill.getId());
+  }
+
+  public boolean linkProjectSkill(Project project, Skill skill) {
+    return linkOrUnlinkEntities(
+        "INSERT IGNORE INTO ProjectSkills (ProjectID, SkillID) VALUES (?, ?);",
+        project.getId(),
+        skill.getId());
+  }
+
+  public boolean linkPersonProject(Person person, Project project) {
+    return linkOrUnlinkEntities(
+        "INSERT IGNORE INTO PersonProjects (PersonID, ProjectID) VALUES (?, ?);",
+        person.getId(),
+        project.getId());
   }
 
   public boolean unlinkPersonSkill(Person person, Skill skill) {
-
-    String deleteSql = "DELETE FROM PersonSkills WHERE PersonID = ? AND SkillID = ?;";
-
-    try (Connection con = getConnection();
-        PreparedStatement deleteStmt = con.prepareStatement(deleteSql)) {
-
-      deleteStmt.setInt(1, person.getId());
-      deleteStmt.setInt(2, skill.getId());
-
-      int affectedRows = deleteStmt.executeUpdate();
-      return affectedRows > 0;
-
-    } catch (SQLException e) {
-      MyUtils.myExceptionHandler(e);
-      return false;
-    }
+    return linkOrUnlinkEntities(
+        "DELETE FROM PersonSkills WHERE PersonID = ? AND SkillID = ?;",
+        person.getId(),
+        skill.getId());
   }
 
   public boolean unlinkPersonProject(Person person, Project project) {
-
-    String deleteSql = "DELETE FROM PersonProjects WHERE PersonID = ? AND ProjectID = ?;";
-
-    try (Connection con = getConnection();
-        PreparedStatement deleteStmt = con.prepareStatement(deleteSql)) {
-
-      deleteStmt.setInt(1, person.getId());
-      deleteStmt.setInt(2, project.getId());
-
-      int affectedRows = deleteStmt.executeUpdate();
-      return affectedRows > 0;
-
-    } catch (SQLException e) {
-      MyUtils.myExceptionHandler(e);
-      return false;
-    }
+    return linkOrUnlinkEntities(
+        "DELETE FROM PersonProjects WHERE PersonID = ? AND ProjectID = ?;",
+        person.getId(),
+        project.getId());
   }
 
   public boolean unlinkProjectSkill(Project project, Skill skill) {
-
-    String deleteSql = "DELETE FROM ProjectSkills WHERE ProjectID = ? AND SkillID = ?;";
-
-    try (Connection con = getConnection();
-        PreparedStatement deleteStmt = con.prepareStatement(deleteSql)) {
-
-      deleteStmt.setInt(1, project.getId());
-      deleteStmt.setInt(2, skill.getId());
-
-      int affectedRows = deleteStmt.executeUpdate();
-      return affectedRows > 0;
-
-    } catch (SQLException e) {
-      MyUtils.myExceptionHandler(e);
-      return false;
-    }
+    return linkOrUnlinkEntities(
+        "DELETE FROM ProjectSkills WHERE ProjectID = ? AND SkillID = ?;",
+        project.getId(),
+        skill.getId());
   }
 }
