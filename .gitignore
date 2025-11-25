@@ -42,8 +42,47 @@ build/*.jar
 out/*.jar
 target/*.jar
 
+# Added in week3 (start of Spring Boot)
+
 # =============================
 # VSCode
 # =============================
 # DO NOT ignore .vscode/ because you need settings.json
-# Nothing to ignore here.
+!.vscode
+# ignore it in subdirectories
+**/.vscode/
+
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+## Testing apps, no need to upload to git
+**/dbtest
+**/first

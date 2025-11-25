@@ -7,5 +7,6 @@
     "java.project.referencedLibraries": [
         "lib/**/*.jar",
         "JDBC-Practice/lib/mysql-connector-j-9.5.0.jar"
-    ]
+    ],
+    "java.configuration.updateBuildConfiguration": "interactive"
 }
