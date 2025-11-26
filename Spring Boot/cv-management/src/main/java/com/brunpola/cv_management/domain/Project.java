@@ -12,5 +12,5 @@ import lombok.NoArgsConstructor;
 public class Project {
 
   private Long id;
-  private String ProjectName;
+  private String projectName;
 }

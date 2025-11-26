@@ -1,3 +1,11 @@
 package com.brunpola.cv_management.dao;
 
-public interface ProjectDao {}
+import com.brunpola.cv_management.domain.Project;
+import java.util.Optional;
+
+public interface ProjectDao {
+
+  Project create(Project project);
+
+  Optional<Project> findOne(long l);
+}
