@@ -24,6 +24,6 @@ public final class TestDataUtil {
   }
 
   public static Project createTestProject() {
-    return Project.builder().id(1L).projectName("Mockito Testing").build();
+    return Project.builder().projectName("Mockito Testing").build();
   }
 }
