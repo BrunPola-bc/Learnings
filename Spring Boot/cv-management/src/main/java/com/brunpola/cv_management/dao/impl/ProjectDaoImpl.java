@@ -17,6 +17,17 @@ import org.springframework.stereotype.Component;
 @Component
 public class ProjectDaoImpl implements ProjectDao {
 
+  public static class ProjectRowMapper implements RowMapper<Project> {
+
+    @Override
+    public Project mapRow(ResultSet rs, int rowNum) throws SQLException {
+      return Project.builder()
+          .id(rs.getLong("ID"))
+          .projectName(rs.getString("ProjectName"))
+          .build();
+    }
+  }
+
   private final JdbcTemplate jdbcTemplate;
 
   public ProjectDaoImpl(final JdbcTemplate jdbcTemplate) {
@@ -43,6 +54,26 @@ public class ProjectDaoImpl implements ProjectDao {
   }
 
   @Override
+  public void delete(long projectId) {
+    jdbcTemplate.update("DELETE FROM Projects WHERE ID = ?", projectId);
+  }
+
+  @Override
+  public List<Project> find() {
+    List<Project> results =
+        jdbcTemplate.query("SELECT ID, ProjectName FROM Projects;", new ProjectRowMapper());
+    return results;
+  }
+
+  @Override
+  public void update(Project project) {
+    jdbcTemplate.update(
+        "UPDATE Projects SET ProjectName = ? WHERE ID = ?",
+        project.getProjectName(),
+        project.getId());
+  }
+
+  @Override
   public Optional<Project> findOne(long projectId) {
     List<Project> results =
         jdbcTemplate.query(
@@ -51,16 +82,5 @@ public class ProjectDaoImpl implements ProjectDao {
             projectId);
 
     return results.stream().findFirst();
-  }
-
-  public static class ProjectRowMapper implements RowMapper<Project> {
-
-    @Override
-    public Project mapRow(ResultSet rs, int rowNum) throws SQLException {
-      return Project.builder()
-          .id(rs.getLong("ID"))
-          .projectName(rs.getString("ProjectName"))
-          .build();
-    }
   }
 }

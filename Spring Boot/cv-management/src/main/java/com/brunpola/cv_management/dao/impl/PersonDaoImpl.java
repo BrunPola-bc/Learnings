@@ -17,11 +17,19 @@ import org.springframework.stereotype.Component;
 @Component
 public class PersonDaoImpl implements PersonDao {
 
-  private final JdbcTemplate jdbcTemplate;
+  public static class PersonRowMapper implements RowMapper<Person> {
 
-  public PersonDaoImpl(final JdbcTemplate jdbcTemplate) {
-    this.jdbcTemplate = jdbcTemplate;
+    @Override
+    public Person mapRow(ResultSet rs, int rowNum) throws SQLException {
+      return Person.builder()
+          .id(rs.getLong("ID"))
+          .firstName(rs.getString("FirstName"))
+          .lastName(rs.getString("LastName"))
+          .build();
+    }
   }
+
+  private final JdbcTemplate jdbcTemplate;
 
   // @Override
   // public void create(Person person) {
@@ -30,6 +38,10 @@ public class PersonDaoImpl implements PersonDao {
   //       person.getFirstName(),
   //       person.getLastName());
   // }
+
+  public PersonDaoImpl(final JdbcTemplate jdbcTemplate) {
+    this.jdbcTemplate = jdbcTemplate;
+  }
 
   @Override
   public Person create(Person person) {
@@ -63,16 +75,18 @@ public class PersonDaoImpl implements PersonDao {
     return results.stream().findFirst();
   }
 
-  public static class PersonRowMapper implements RowMapper<Person> {
+  @Override
+  public void delete(long personId) {
+    jdbcTemplate.update("DELETE FROM People WHERE ID = ?", personId);
+  }
 
-    @Override
-    public Person mapRow(ResultSet rs, int rowNum) throws SQLException {
-      return Person.builder()
-          .id(rs.getLong("ID"))
-          .firstName(rs.getString("FirstName"))
-          .lastName(rs.getString("LastName"))
-          .build();
-    }
+  @Override
+  public void update(Person person) {
+    jdbcTemplate.update(
+        "UPDATE Person SET FirstName = ?, LastName = ? WHERE ID = ?",
+        person.getFirstName(),
+        person.getLastName(),
+        person.getId());
   }
 
   @Override

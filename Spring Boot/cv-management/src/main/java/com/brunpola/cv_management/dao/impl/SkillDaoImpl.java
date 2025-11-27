@@ -17,6 +17,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class SkillDaoImpl implements SkillDao {
 
+  public static class SkillRowMapper implements RowMapper<Skill> {
+
+    @Override
+    public Skill mapRow(ResultSet rs, int rowNum) throws SQLException {
+      return Skill.builder().id(rs.getLong("ID")).skillName(rs.getString("SkillName")).build();
+    }
+  }
+
   private final JdbcTemplate jdbcTemplate;
 
   public SkillDaoImpl(final JdbcTemplate jdbcTemplate) {
@@ -53,12 +61,15 @@ public class SkillDaoImpl implements SkillDao {
     return results.stream().findFirst();
   }
 
-  public static class SkillRowMapper implements RowMapper<Skill> {
+  @Override
+  public void delete(long skillId) {
+    jdbcTemplate.update("DELETE FROM Skills WHERE ID = ?", skillId);
+  }
 
-    @Override
-    public Skill mapRow(ResultSet rs, int rowNum) throws SQLException {
-      return Skill.builder().id(rs.getLong("ID")).skillName(rs.getString("SkillName")).build();
-    }
+  @Override
+  public void update(Skill skill) {
+    jdbcTemplate.update(
+        "UPDATE Skills SET SkillName = ? WHERE ID = ?", skill.getSkillName(), skill.getId());
   }
 
   @Override

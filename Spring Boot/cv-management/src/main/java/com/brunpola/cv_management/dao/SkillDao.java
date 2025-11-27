@@ -11,4 +11,8 @@ public interface SkillDao {
   Optional<Skill> findOne(long skillId);
 
   List<Skill> find();
+
+  void update(Skill skill);
+
+  void delete(long skillId);
 }

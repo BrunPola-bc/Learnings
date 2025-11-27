@@ -11,4 +11,8 @@ public interface PersonDao {
   Optional<Person> findOne(long personId);
 
   List<Person> find();
+
+  void update(Person person);
+
+  void delete(long personId);
 }
