@@ -3,7 +3,14 @@ package com.brunpola.cv_management.repositories;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.brunpola.cv_management.TestDataUtil;
+import com.brunpola.cv_management.domain.Person;
+import com.brunpola.cv_management.domain.Project;
 import com.brunpola.cv_management.domain.Skill;
+import com.brunpola.cv_management.domain.join.PersonSkill;
+import com.brunpola.cv_management.domain.join.PersonSkillId;
+import com.brunpola.cv_management.domain.join.ProjectSkill;
+import com.brunpola.cv_management.domain.join.ProjectSkillId;
+import jakarta.transaction.Transactional;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,8 +23,22 @@ public class SkillRepositoryIntegrationTests {
 
   private final SkillRepository underTest;
 
+  private final PersonRepository personRepository;
+  private final ProjectRepository projectRepository;
+  private final PersonSkillRepository personSkillRepository;
+  private final ProjectSkillRepository projectSkillRepository;
+
   @Autowired
-  public SkillRepositoryIntegrationTests(SkillRepository underTest) {
+  public SkillRepositoryIntegrationTests(
+      PersonRepository personRepository,
+      PersonSkillRepository personSkillRepository,
+      ProjectRepository projectRepository,
+      ProjectSkillRepository projectSkillRepository,
+      SkillRepository underTest) {
+    this.personRepository = personRepository;
+    this.personSkillRepository = personSkillRepository;
+    this.projectRepository = projectRepository;
+    this.projectSkillRepository = projectSkillRepository;
     this.underTest = underTest;
   }
 
@@ -68,10 +89,40 @@ public class SkillRepositoryIntegrationTests {
     underTest.deleteById(skill1.getId());
     underTest.delete(skill2);
 
-    Optional<Skill> resultA = underTest.findById(skill1.getId());
-    Optional<Skill> resultM = underTest.findById(skill2.getId());
+    Optional<Skill> result1 = underTest.findById(skill1.getId());
+    Optional<Skill> result2 = underTest.findById(skill2.getId());
 
-    assertThat(resultA).isEmpty();
-    assertThat(resultM).isEmpty();
+    assertThat(result1).isEmpty();
+    assertThat(result2).isEmpty();
+  }
+
+  @Test
+  @Transactional
+  public void testThatDeleteSkillCascadeDeletes() {
+    Skill skill = underTest.findById(1L).orElseThrow();
+
+    PersonSkill firstPersonSkill = skill.getPeople().stream().findFirst().orElseThrow();
+    Person person = firstPersonSkill.getPerson();
+
+    ProjectSkill firstProjectSkill = skill.getProjects().stream().findFirst().orElseThrow();
+    Project project = firstProjectSkill.getProject();
+
+    underTest.delete(skill);
+
+    // Skill deleted
+    assertThat(underTest.findById(1L)).isEmpty();
+
+    boolean personSkillExists =
+        personSkillRepository.existsById(new PersonSkillId(person.getId(), skill.getId()));
+    boolean projectSkillExists =
+        projectSkillRepository.existsById(new ProjectSkillId(project.getId(), skill.getId()));
+
+    // Junction table entries deleted
+    assertThat(personSkillExists).isFalse();
+    assertThat(projectSkillExists).isFalse();
+
+    // Persons and Projects not deleted
+    assertThat(personRepository.findById(person.getId())).isPresent();
+    assertThat(projectRepository.findById(project.getId())).isPresent();
   }
 }

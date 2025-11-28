@@ -4,7 +4,7 @@ CREATE DATABASE week1database;
 USE week1database;
 
 CREATE TABLE People (
-    ID INT PRIMARY KEY AUTO_INCREMENT,
+    ID BIGINT PRIMARY KEY AUTO_INCREMENT,
     FirstName VARCHAR(50) NOT NULL,
     LastName VARCHAR(50) NOT NULL
     -- ,Email VARCHAR(100),
@@ -12,13 +12,13 @@ CREATE TABLE People (
 );
 
 CREATE TABLE Skills (
-    ID INT PRIMARY KEY AUTO_INCREMENT,
+    ID BIGINT PRIMARY KEY AUTO_INCREMENT,
     SkillName VARCHAR(50) NOT NULL
     -- ,Descript VARCHAR(255)
 );
 
 CREATE TABLE Projects (
-    ID INT PRIMARY KEY AUTO_INCREMENT,
+    ID BIGINT PRIMARY KEY AUTO_INCREMENT,
     ProjectName VARCHAR(50) NOT NULL
     -- ,Descript VARCHAR(255),
     -- StartDate DATE,
@@ -28,8 +28,8 @@ CREATE TABLE Projects (
 -- Many-to-Many relationship between People and Skills
 -- Who has which skills
 CREATE TABLE PersonSkills (
-    PersonID INT,
-    SkillID INT,
+    PersonID BIGINT,
+    SkillID BIGINT,
     -- ProficiencyLevel ENUM('Beginner', 'Intermediate', 'Advanced', 'Expert'),
     PRIMARY KEY (PersonID, SkillID),
     FOREIGN KEY (PersonID) REFERENCES People(ID),
@@ -39,8 +39,8 @@ CREATE TABLE PersonSkills (
 -- Many-to-Many relationship between People and Projects
 -- Who is working on which projects
 CREATE TABLE PersonProjects (
-    PersonID INT,
-    ProjectID INT,
+    PersonID BIGINT,
+    ProjectID BIGINT,
     -- Role VARCHAR(50),
     PRIMARY KEY (PersonID, ProjectID),
     FOREIGN KEY (PersonID) REFERENCES People(ID),
@@ -50,8 +50,8 @@ CREATE TABLE PersonProjects (
 -- Many-to-Many relationship between Skills and Projects
 -- Which skills are required for which projects
 CREATE TABLE ProjectSkills (
-    ProjectID INT,
-    SkillID INT,
+    ProjectID BIGINT,
+    SkillID BIGINT,
     PRIMARY KEY (ProjectID, SkillID),
     FOREIGN KEY (ProjectID) REFERENCES Projects(ID),
     FOREIGN KEY (SkillID) REFERENCES Skills(ID)
