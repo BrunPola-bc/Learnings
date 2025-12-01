@@ -1,7 +1,7 @@
 package com.brunpola.cv_management.domain.join;
 
-import com.brunpola.cv_management.domain.Person;
-import com.brunpola.cv_management.domain.Skill;
+import com.brunpola.cv_management.domain.entities.PersonEntity;
+import com.brunpola.cv_management.domain.entities.SkillEntity;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -22,14 +22,14 @@ public class PersonSkill {
   @ManyToOne
   @MapsId("personId")
   @JoinColumn(name = "PersonID")
-  private Person person;
+  private PersonEntity person;
 
   @ManyToOne
   @MapsId("skillId")
   @JoinColumn(name = "SkillID")
-  private Skill skill;
+  private SkillEntity skill;
 
-  public PersonSkill(Person person, Skill skill) {
+  public PersonSkill(PersonEntity person, SkillEntity skill) {
     this.person = person;
     this.skill = skill;
     this.id = new PersonSkillId(person.getId(), skill.getId());

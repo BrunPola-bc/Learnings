@@ -3,9 +3,9 @@ package com.brunpola.cv_management.repositories;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.brunpola.cv_management.TestDataUtil;
-import com.brunpola.cv_management.domain.Person;
-import com.brunpola.cv_management.domain.Project;
-import com.brunpola.cv_management.domain.Skill;
+import com.brunpola.cv_management.domain.entities.PersonEntity;
+import com.brunpola.cv_management.domain.entities.ProjectEntity;
+import com.brunpola.cv_management.domain.entities.SkillEntity;
 import com.brunpola.cv_management.domain.join.PersonSkill;
 import com.brunpola.cv_management.domain.join.PersonSkillId;
 import com.brunpola.cv_management.domain.join.ProjectSkill;
@@ -44,10 +44,10 @@ public class SkillRepositoryIntegrationTests {
 
   @Test
   public void testThatSkillCanBeCreatedAndRecalled() {
-    Skill skill = TestDataUtil.createTestSkill();
+    SkillEntity skill = TestDataUtil.createTestSkill();
 
     skill = underTest.save(skill);
-    Optional<Skill> result = underTest.findById(skill.getId());
+    Optional<SkillEntity> result = underTest.findById(skill.getId());
 
     assertThat(result).isPresent();
     assertThat(result.get()).isEqualTo(skill);
@@ -55,42 +55,42 @@ public class SkillRepositoryIntegrationTests {
 
   @Test
   public void testThatMultipleSkillsCanBeRecalled() {
-    Skill skill = TestDataUtil.createTestSkill();
+    SkillEntity skill = TestDataUtil.createTestSkill();
     skill = underTest.save(skill);
 
     // Already in DB
-    Skill skill2 = Skill.builder().id(2L).skillName("SQL").build();
+    SkillEntity skill2 = SkillEntity.builder().id(2L).skillName("SQL").build();
 
-    Iterable<Skill> result = underTest.findAll();
+    Iterable<SkillEntity> result = underTest.findAll();
     assertThat(result).contains(skill, skill2);
   }
 
   @Test
   public void testThatSkillCanBeUpdated() {
-    Skill skill = TestDataUtil.createTestSkill();
+    SkillEntity skill = TestDataUtil.createTestSkill();
     skill = underTest.save(skill);
     skill.setSkillName("NEW NAME");
     skill = underTest.save(skill);
 
-    Optional<Skill> result = underTest.findById(skill.getId());
+    Optional<SkillEntity> result = underTest.findById(skill.getId());
     assertThat(result).isPresent();
     assertThat(result.get()).isEqualTo(skill);
   }
 
   @Test
   public void testThatSkillCanBeDeleted() {
-    Skill skill1 = TestDataUtil.createTestSkill();
+    SkillEntity skill1 = TestDataUtil.createTestSkill();
     underTest.save(skill1);
 
-    Optional<Skill> skill2Optional = underTest.findById(2L);
+    Optional<SkillEntity> skill2Optional = underTest.findById(2L);
     assertThat(skill2Optional).isPresent();
-    Skill skill2 = skill2Optional.get();
+    SkillEntity skill2 = skill2Optional.get();
 
     underTest.deleteById(skill1.getId());
     underTest.delete(skill2);
 
-    Optional<Skill> result1 = underTest.findById(skill1.getId());
-    Optional<Skill> result2 = underTest.findById(skill2.getId());
+    Optional<SkillEntity> result1 = underTest.findById(skill1.getId());
+    Optional<SkillEntity> result2 = underTest.findById(skill2.getId());
 
     assertThat(result1).isEmpty();
     assertThat(result2).isEmpty();
@@ -99,13 +99,13 @@ public class SkillRepositoryIntegrationTests {
   @Test
   @Transactional
   public void testThatDeleteSkillCascadeDeletes() {
-    Skill skill = underTest.findById(1L).orElseThrow();
+    SkillEntity skill = underTest.findById(1L).orElseThrow();
 
     PersonSkill firstPersonSkill = skill.getPeople().stream().findFirst().orElseThrow();
-    Person person = firstPersonSkill.getPerson();
+    PersonEntity person = firstPersonSkill.getPerson();
 
     ProjectSkill firstProjectSkill = skill.getProjects().stream().findFirst().orElseThrow();
-    Project project = firstProjectSkill.getProject();
+    ProjectEntity project = firstProjectSkill.getProject();
 
     underTest.delete(skill);
 

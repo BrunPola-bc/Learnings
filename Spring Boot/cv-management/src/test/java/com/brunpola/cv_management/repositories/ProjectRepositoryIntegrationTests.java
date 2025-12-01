@@ -3,9 +3,9 @@ package com.brunpola.cv_management.repositories;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.brunpola.cv_management.TestDataUtil;
-import com.brunpola.cv_management.domain.Person;
-import com.brunpola.cv_management.domain.Project;
-import com.brunpola.cv_management.domain.Skill;
+import com.brunpola.cv_management.domain.entities.PersonEntity;
+import com.brunpola.cv_management.domain.entities.ProjectEntity;
+import com.brunpola.cv_management.domain.entities.SkillEntity;
 import com.brunpola.cv_management.domain.join.PersonProject;
 import com.brunpola.cv_management.domain.join.PersonProjectId;
 import com.brunpola.cv_management.domain.join.ProjectSkill;
@@ -42,10 +42,10 @@ public class ProjectRepositoryIntegrationTests {
 
   @Test
   public void testThatProjectCanBeCreatedAndRecalled() {
-    Project project = TestDataUtil.createTestProject();
+    ProjectEntity project = TestDataUtil.createTestProject();
 
     project = underTest.save(project);
-    Optional<Project> result = underTest.findById(project.getId());
+    Optional<ProjectEntity> result = underTest.findById(project.getId());
 
     assertThat(result).isPresent();
     assertThat(result.get()).isEqualTo(project);
@@ -53,42 +53,43 @@ public class ProjectRepositoryIntegrationTests {
 
   @Test
   public void testThatMultipleProjectsCanBeRecalled() {
-    Project project = TestDataUtil.createTestProject();
+    ProjectEntity project = TestDataUtil.createTestProject();
     project = underTest.save(project);
 
     // Already in DB
-    Project project2 = Project.builder().id(2L).projectName("Database Migration").build();
+    ProjectEntity project2 =
+        ProjectEntity.builder().id(2L).projectName("Database Migration").build();
 
-    Iterable<Project> result = underTest.findAll();
+    Iterable<ProjectEntity> result = underTest.findAll();
     assertThat(result).contains(project, project2);
   }
 
   @Test
   public void testThatProjectCanBeUpdated() {
-    Project project = TestDataUtil.createTestProject();
+    ProjectEntity project = TestDataUtil.createTestProject();
     project = underTest.save(project);
     project.setProjectName("NEW NAME");
     project = underTest.save(project);
 
-    Optional<Project> result = underTest.findById(project.getId());
+    Optional<ProjectEntity> result = underTest.findById(project.getId());
     assertThat(result).isPresent();
     assertThat(result.get()).isEqualTo(project);
   }
 
   @Test
   public void testThatProjectCanBeDeleted() {
-    Project project1 = TestDataUtil.createTestProject();
+    ProjectEntity project1 = TestDataUtil.createTestProject();
     underTest.save(project1);
 
-    Optional<Project> project2Optional = underTest.findById(2L);
+    Optional<ProjectEntity> project2Optional = underTest.findById(2L);
     assertThat(project2Optional).isPresent();
-    Project project2 = project2Optional.get();
+    ProjectEntity project2 = project2Optional.get();
 
     underTest.deleteById(project1.getId());
     underTest.delete(project2);
 
-    Optional<Project> result1 = underTest.findById(project1.getId());
-    Optional<Project> result2 = underTest.findById(project2.getId());
+    Optional<ProjectEntity> result1 = underTest.findById(project1.getId());
+    Optional<ProjectEntity> result2 = underTest.findById(project2.getId());
 
     assertThat(result1).isEmpty();
     assertThat(result2).isEmpty();
@@ -97,13 +98,13 @@ public class ProjectRepositoryIntegrationTests {
   @Test
   @Transactional
   public void testThatDeleteProjectCascadeDeletes() {
-    Project project = underTest.findById(1L).orElseThrow();
+    ProjectEntity project = underTest.findById(1L).orElseThrow();
 
     PersonProject firstPersonProject = project.getPeople().stream().findFirst().orElseThrow();
-    Person person = firstPersonProject.getPerson();
+    PersonEntity person = firstPersonProject.getPerson();
 
     ProjectSkill firstProjectSkill = project.getSkills().stream().findFirst().orElseThrow();
-    Skill skill = firstProjectSkill.getSkill();
+    SkillEntity skill = firstProjectSkill.getSkill();
 
     underTest.delete(project);
 

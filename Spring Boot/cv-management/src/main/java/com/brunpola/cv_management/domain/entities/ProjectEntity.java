@@ -1,6 +1,6 @@
-package com.brunpola.cv_management.domain;
+package com.brunpola.cv_management.domain.entities;
 
-import com.brunpola.cv_management.domain.join.PersonSkill;
+import com.brunpola.cv_management.domain.join.PersonProject;
 import com.brunpola.cv_management.domain.join.ProjectSkill;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -19,29 +19,27 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
-@EqualsAndHashCode(exclude = {"people", "projects"})
+@EqualsAndHashCode(exclude = {"people", "skills"})
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "Skills")
-public class Skill {
+@Table(name = "Projects")
+public class ProjectEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "ID")
   private Long id;
 
-  @Column(name = "SkillName")
-  private String skillName;
+  @Column(name = "ProjectName")
+  private String projectName;
 
-  // Many-to-many via join entity PersonSkill
-  @OneToMany(mappedBy = "skill", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
   @Builder.Default
-  private Set<PersonSkill> people = new HashSet<>();
+  private Set<PersonProject> people = new HashSet<>();
 
-  // Many-to-many via join entity ProjectSkill
-  @OneToMany(mappedBy = "skill", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
   @Builder.Default
-  private Set<ProjectSkill> projects = new HashSet<>();
+  private Set<ProjectSkill> skills = new HashSet<>();
 }

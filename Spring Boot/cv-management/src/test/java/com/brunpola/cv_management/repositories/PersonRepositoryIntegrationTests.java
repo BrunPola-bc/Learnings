@@ -3,9 +3,9 @@ package com.brunpola.cv_management.repositories;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.brunpola.cv_management.TestDataUtil;
-import com.brunpola.cv_management.domain.Person;
-import com.brunpola.cv_management.domain.Project;
-import com.brunpola.cv_management.domain.Skill;
+import com.brunpola.cv_management.domain.entities.PersonEntity;
+import com.brunpola.cv_management.domain.entities.ProjectEntity;
+import com.brunpola.cv_management.domain.entities.SkillEntity;
 import com.brunpola.cv_management.domain.join.PersonProject;
 import com.brunpola.cv_management.domain.join.PersonProjectId;
 import com.brunpola.cv_management.domain.join.PersonSkill;
@@ -46,10 +46,10 @@ public class PersonRepositoryIntegrationTests {
 
   @Test
   public void testThatPersonCanBeCreatedAndRecalled() {
-    Person person = TestDataUtil.createTestPersonB();
+    PersonEntity person = TestDataUtil.createTestPersonB();
 
     person = underTest.save(person);
-    Optional<Person> result = underTest.findById(person.getId());
+    Optional<PersonEntity> result = underTest.findById(person.getId());
 
     assertThat(result).isPresent();
     assertThat(result.get()).isEqualTo(person);
@@ -57,49 +57,50 @@ public class PersonRepositoryIntegrationTests {
 
   @Test
   public void testThatMultiplePeopleCanBeCreatedAndRecalled() {
-    Person personA = TestDataUtil.createTestPersonA();
+    PersonEntity personA = TestDataUtil.createTestPersonA();
     personA = underTest.save(personA);
-    Person personB = TestDataUtil.createTestPersonB();
+    PersonEntity personB = TestDataUtil.createTestPersonB();
     personB = underTest.save(personB);
-    Person personC = TestDataUtil.createTestPersonC();
+    PersonEntity personC = TestDataUtil.createTestPersonC();
     personC = underTest.save(personC);
 
     // Already in DB
-    Person personM = Person.builder().id(7L).firstName("Michael").lastName("Scott").build();
+    PersonEntity personM =
+        PersonEntity.builder().id(7L).firstName("Michael").lastName("Scott").build();
 
-    Optional<Person> personD = underTest.findById(8L);
+    Optional<PersonEntity> personD = underTest.findById(8L);
 
-    Iterable<Person> result = underTest.findAll();
+    Iterable<PersonEntity> result = underTest.findAll();
     assertThat(result).contains(personA, personB, personC, personM);
     assertThat(personA).isEqualTo(personD.get());
   }
 
   @Test
   public void testThatPersonCanBeUpdated() {
-    Person personA = TestDataUtil.createTestPersonA();
+    PersonEntity personA = TestDataUtil.createTestPersonA();
     personA = underTest.save(personA);
     personA.setFirstName("NEW NAME");
     personA = underTest.save(personA);
 
-    Optional<Person> result = underTest.findById(personA.getId());
+    Optional<PersonEntity> result = underTest.findById(personA.getId());
     assertThat(result).isPresent();
     assertThat(result.get()).isEqualTo(personA);
   }
 
   @Test
   public void testThatPersonCanBeDeleted() {
-    Person personA = TestDataUtil.createTestPersonA();
+    PersonEntity personA = TestDataUtil.createTestPersonA();
     underTest.save(personA);
 
-    Optional<Person> personMOptional = underTest.findById(7L);
+    Optional<PersonEntity> personMOptional = underTest.findById(7L);
     assertThat(personMOptional).isPresent();
-    Person personM = personMOptional.get();
+    PersonEntity personM = personMOptional.get();
 
     underTest.deleteById(personA.getId());
     underTest.delete(personM);
 
-    Optional<Person> resultA = underTest.findById(personA.getId());
-    Optional<Person> resultM = underTest.findById(personM.getId());
+    Optional<PersonEntity> resultA = underTest.findById(personA.getId());
+    Optional<PersonEntity> resultM = underTest.findById(personM.getId());
 
     assertThat(resultA).isEmpty();
     assertThat(resultM).isEmpty();
@@ -108,9 +109,9 @@ public class PersonRepositoryIntegrationTests {
   @Test
   @Transactional
   public void testToFetchSkills() {
-    Optional<Person> personOpt = underTest.findById(1L);
+    Optional<PersonEntity> personOpt = underTest.findById(1L);
     assertThat(personOpt).isPresent();
-    Person person = personOpt.get();
+    PersonEntity person = personOpt.get();
 
     Set<PersonSkill> skills = person.getSkills();
     assertThat(skills).isNotEmpty();
@@ -119,13 +120,13 @@ public class PersonRepositoryIntegrationTests {
   @Test
   @Transactional
   public void testThatDeletePersonCascadeDeletes() {
-    Person person = underTest.findById(1L).orElseThrow();
+    PersonEntity person = underTest.findById(1L).orElseThrow();
 
     PersonSkill firsPersonSkill = person.getSkills().stream().findFirst().orElseThrow();
-    Skill skill = firsPersonSkill.getSkill();
+    SkillEntity skill = firsPersonSkill.getSkill();
 
     PersonProject firsPersonProject = person.getProjects().stream().findFirst().orElseThrow();
-    Project project = firsPersonProject.getProject();
+    ProjectEntity project = firsPersonProject.getProject();
 
     underTest.delete(person);
 
@@ -148,15 +149,15 @@ public class PersonRepositoryIntegrationTests {
 
   @Test
   public void testForLastNameContains() {
-    Optional<Person> personMOptional = underTest.findById(7L);
+    Optional<PersonEntity> personMOptional = underTest.findById(7L);
     assertThat(personMOptional).isPresent();
-    Person personM = personMOptional.get();
+    PersonEntity personM = personMOptional.get();
 
     // Person personA = TestDataUtil.createTestPersonA();
     // underTest.save(personA);
-    Person personA = underTest.findById(1L).orElseThrow();
+    PersonEntity personA = underTest.findById(1L).orElseThrow();
 
-    Iterable<Person> peopleWith = underTest.lastNameContains("tt");
+    Iterable<PersonEntity> peopleWith = underTest.lastNameContains("tt");
 
     assertThat(peopleWith).contains(personM);
     assertThat(peopleWith).doesNotContain(personA);
@@ -164,11 +165,11 @@ public class PersonRepositoryIntegrationTests {
 
   @Test
   public void testHQL() {
-    Optional<Person> personMOptional = underTest.findById(7L);
+    Optional<PersonEntity> personMOptional = underTest.findById(7L);
     assertThat(personMOptional).isPresent();
-    Person personM = personMOptional.get();
+    PersonEntity personM = personMOptional.get();
 
-    Iterable<Person> peopleWith = underTest.testMethod("tt");
+    Iterable<PersonEntity> peopleWith = underTest.testMethod("tt");
 
     assertThat(peopleWith).doesNotContain(personM);
   }
