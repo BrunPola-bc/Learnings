@@ -5,8 +5,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.brunpola.cv_management.TestDataUtil;
 import com.brunpola.cv_management.domain.dto.PersonDto;
 import com.brunpola.cv_management.domain.entities.PersonEntity;
+import com.brunpola.cv_management.domain.entities.SkillEntity;
+import com.brunpola.cv_management.domain.join.PersonSkill;
+import com.brunpola.cv_management.domain.join.PersonSkillId;
 import com.brunpola.cv_management.repositories.PersonRepository;
+import com.brunpola.cv_management.repositories.PersonSkillRepository;
 import com.brunpola.cv_management.services.PersonService;
+import jakarta.transaction.Transactional;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,15 +33,20 @@ public class PersonControllerIntegrationTests {
   private final MockMvc mockMvc;
   private final ObjectMapper objectMapper;
   private final PersonRepository personRepository;
+  private final PersonSkillRepository personSkillRepository;
   private final PersonService personService;
 
   @Autowired
   public PersonControllerIntegrationTests(
-      MockMvc mockMvc, PersonRepository personRepository, PersonService personService) {
+      MockMvc mockMvc,
+      PersonRepository personRepository,
+      PersonService personService,
+      PersonSkillRepository personSkillRepository) {
     this.mockMvc = mockMvc;
     this.objectMapper = new ObjectMapper();
     this.personRepository = personRepository;
     this.personService = personService;
+    this.personSkillRepository = personSkillRepository;
   }
 
   @Test
@@ -87,15 +97,23 @@ public class PersonControllerIntegrationTests {
 
     mockMvc
         .perform(MockMvcRequestBuilders.get("/people").contentType(MediaType.APPLICATION_JSON))
-        .andExpect(MockMvcResultMatchers.jsonPath("$[0].id").value(person1.getId()))
-        .andExpect(MockMvcResultMatchers.jsonPath("$[0].firstName").value(person1.getFirstName()))
-        .andExpect(MockMvcResultMatchers.jsonPath("$[0].lastName").value(person1.getLastName()))
-        .andExpect(MockMvcResultMatchers.jsonPath("$[1].id").value(person2.getId()))
-        .andExpect(MockMvcResultMatchers.jsonPath("$[1].firstName").value(person2.getFirstName()))
-        .andExpect(MockMvcResultMatchers.jsonPath("$[1].lastName").value(person2.getLastName()))
-        .andExpect(MockMvcResultMatchers.jsonPath("$[2].id").value(person3.getId()))
-        .andExpect(MockMvcResultMatchers.jsonPath("$[2].firstName").value(person3.getFirstName()))
-        .andExpect(MockMvcResultMatchers.jsonPath("$[2].lastName").value(person3.getLastName()));
+        .andExpect(MockMvcResultMatchers.jsonPath("$.content[0].id").value(person1.getId()))
+        .andExpect(
+            MockMvcResultMatchers.jsonPath("$.content[0].firstName").value(person1.getFirstName()))
+        .andExpect(
+            MockMvcResultMatchers.jsonPath("$.content[0].lastName").value(person1.getLastName()))
+        .andExpect(MockMvcResultMatchers.jsonPath("$.content[1].id").value(person2.getId()))
+        .andExpect(
+            MockMvcResultMatchers.jsonPath("$.content[1].firstName").value(person2.getFirstName()))
+        .andExpect(
+            MockMvcResultMatchers.jsonPath("$.content[1].lastName").value(person2.getLastName()))
+        .andExpect(MockMvcResultMatchers.jsonPath("$.content[2].id").value(person3.getId()))
+        .andExpect(
+            MockMvcResultMatchers.jsonPath("$.content[2].firstName").value(person3.getFirstName()))
+        .andExpect(
+            MockMvcResultMatchers.jsonPath("$.content[2].lastName").value(person3.getLastName()))
+        .andExpect(MockMvcResultMatchers.jsonPath("$.totalElements").value(7))
+        .andExpect(MockMvcResultMatchers.jsonPath("$.pageable.pageNumber").value(0));
   }
 
   @Test
@@ -274,5 +292,25 @@ public class PersonControllerIntegrationTests {
             MockMvcRequestBuilders.delete("/people/" + saved.getId())
                 .contentType(MediaType.APPLICATION_JSON))
         .andExpect(MockMvcResultMatchers.status().isNoContent());
+  }
+
+  @Test
+  @Transactional
+  public void TestThatDeletePersonServiceCascadeDeletes() throws Exception {
+    PersonEntity person = personService.findOne(1L).orElseThrow();
+
+    PersonSkill firsPersonSkill = person.getSkills().stream().findFirst().orElseThrow();
+    SkillEntity skill = firsPersonSkill.getSkill();
+
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.delete("/people/" + person.getId())
+                .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(MockMvcResultMatchers.status().isNoContent());
+
+    boolean personSkillExists =
+        personSkillRepository.existsById(new PersonSkillId(person.getId(), skill.getId()));
+
+    assertThat(personSkillExists).isFalse();
   }
 }

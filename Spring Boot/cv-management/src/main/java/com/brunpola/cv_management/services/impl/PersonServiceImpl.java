@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -27,6 +29,11 @@ public class PersonServiceImpl implements PersonService {
   public List<PersonEntity> findAll() {
     return StreamSupport.stream(personRepository.findAll().spliterator(), false)
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public Page<PersonEntity> findAll(Pageable pageable) {
+    return personRepository.findAll(pageable);
   }
 
   @Override

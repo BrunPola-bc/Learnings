@@ -4,9 +4,9 @@ import com.brunpola.cv_management.domain.dto.PersonDto;
 import com.brunpola.cv_management.domain.entities.PersonEntity;
 import com.brunpola.cv_management.mappers.Mapper;
 import com.brunpola.cv_management.services.PersonService;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -38,9 +38,9 @@ public class PersonController {
   }
 
   @GetMapping(path = "/people")
-  public List<PersonDto> listPeople() {
-    List<PersonEntity> people = personService.findAll();
-    return people.stream().map(personMapper::mapTo).collect(Collectors.toList());
+  public Page<PersonDto> listPeople(Pageable pageable) {
+    Page<PersonEntity> people = personService.findAll(pageable);
+    return people.map(personMapper::mapTo);
   }
 
   @GetMapping(path = "/people/{id}")
