@@ -38,4 +38,27 @@ public class PersonServiceImpl implements PersonService {
   public boolean isExists(Long id) {
     return personRepository.existsById(id);
   }
+
+  @Override
+  public PersonEntity partialUpdate(Long id, PersonEntity personEntity) {
+
+    personEntity.setId(id);
+
+    return personRepository
+        .findById(id)
+        .map(
+            existingPerson -> {
+              Optional.ofNullable(personEntity.getFirstName())
+                  .ifPresent(existingPerson::setFirstName);
+              Optional.ofNullable(personEntity.getLastName())
+                  .ifPresent(existingPerson::setLastName);
+              return personRepository.save(existingPerson);
+            })
+        .orElseThrow(() -> new RuntimeException("Person for partial update does not exist"));
+  }
+
+  @Override
+  public void delete(Long id) {
+    personRepository.deleteById(id);
+  }
 }

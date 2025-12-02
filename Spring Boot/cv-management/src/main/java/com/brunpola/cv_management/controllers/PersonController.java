@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -69,15 +70,23 @@ public class PersonController {
     return new ResponseEntity<>(personMapper.mapTo(savedPersonEntity), HttpStatus.OK);
   }
 
-  // @PatchMapping(path = "people/{id}")
-  // public ResponseEntity<PersonDto> patchPerson(@PathVariable("id") Long id) {
-  //   // TODO: process PATCH request
+  @PatchMapping(path = "people/{id}")
+  public ResponseEntity<PersonDto> partialUpdatePerson(
+      @PathVariable("id") Long id, @RequestBody PersonDto personDto) {
 
-  //   return entity;
-  // }
+    if (!personService.isExists(id)) {
+      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+
+    PersonEntity personEntity = personMapper.mapFrom(personDto);
+    PersonEntity savedPersonEntity = personService.partialUpdate(id, personEntity);
+
+    return new ResponseEntity<>(personMapper.mapTo(savedPersonEntity), HttpStatus.OK);
+  }
 
   @DeleteMapping(path = "people/{id}")
-  public void deletePerson(@PathVariable("id") Long id) {
-    // TODO: process DELETE request
+  public ResponseEntity<Void> deletePerson(@PathVariable("id") Long id) {
+    personService.delete(id);
+    return new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }
 }

@@ -13,4 +13,8 @@ public interface PersonService {
   Optional<PersonEntity> findOne(Long id);
 
   boolean isExists(Long id);
+
+  PersonEntity partialUpdate(Long id, PersonEntity personEntity);
+
+  void delete(Long id);
 }

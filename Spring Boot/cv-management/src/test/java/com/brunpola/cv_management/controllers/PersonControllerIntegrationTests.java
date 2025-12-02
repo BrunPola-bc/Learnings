@@ -7,6 +7,7 @@ import com.brunpola.cv_management.domain.dto.PersonDto;
 import com.brunpola.cv_management.domain.entities.PersonEntity;
 import com.brunpola.cv_management.repositories.PersonRepository;
 import com.brunpola.cv_management.services.PersonService;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -190,5 +191,88 @@ public class PersonControllerIntegrationTests {
         .andExpect(
             MockMvcResultMatchers.jsonPath("$.firstName").value(personEntityB.getFirstName()))
         .andExpect(MockMvcResultMatchers.jsonPath("$.lastName").value(personEntityB.getLastName()));
+  }
+
+  @Test
+  public void TestPartialUpdatePersonReturnsHttpStatus200WhenPersonExist() throws Exception {
+    PersonEntity personEntity = TestDataUtil.createTestPersonA();
+    PersonEntity saved = personService.save(personEntity);
+
+    PersonDto personDto = TestDataUtil.createTestPersonDtoA();
+    personDto.setId(-1L);
+    String personDtoJson = objectMapper.writeValueAsString(personDto);
+
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.patch("/people/" + saved.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(personDtoJson))
+        .andExpect(MockMvcResultMatchers.status().isOk());
+  }
+
+  @Test
+  public void TestPartialUpdatePersonReturnsHttpStatus404WhenPersonDoesNotExist() throws Exception {
+    PersonDto personDto = TestDataUtil.createTestPersonDtoA();
+    personDto.setId(-1L);
+    String personDtoJson = objectMapper.writeValueAsString(personDto);
+
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.patch("/people/-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(personDtoJson))
+        .andExpect(MockMvcResultMatchers.status().isNotFound());
+  }
+
+  @Test
+  public void TestPartialUpdatePersonUpdatesExistingPerson() throws Exception {
+    PersonEntity personEntityA = TestDataUtil.createTestPersonA();
+    PersonEntity saved = personService.save(personEntityA);
+
+    PersonEntity personEntityB = TestDataUtil.createTestPersonB();
+    // personEntityB.setId(saved.getId());
+    personEntityB.setFirstName(null);
+    String personDtoUpdatedJson = objectMapper.writeValueAsString(personEntityB);
+
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.patch("/people/" + saved.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(personDtoUpdatedJson))
+        .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(saved.getId()))
+        .andExpect(MockMvcResultMatchers.jsonPath("$.firstName").value(saved.getFirstName()))
+        .andExpect(MockMvcResultMatchers.jsonPath("$.lastName").value(personEntityB.getLastName()));
+  }
+
+  @Test
+  public void TestDeletePersonReturnsHttpStatus204NoContent() throws Exception {
+    PersonEntity personEntityA = TestDataUtil.createTestPersonA();
+    PersonEntity saved = personService.save(personEntityA);
+
+    personService.delete(saved.getId());
+
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.delete("/people/" + saved.getId())
+                .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(MockMvcResultMatchers.status().isNoContent());
+  }
+
+  @Test
+  public void TestDeletePersonDeletesPerson() throws Exception {
+    PersonEntity personEntityA = TestDataUtil.createTestPersonA();
+    PersonEntity saved = personService.save(personEntityA);
+
+    personService.delete(saved.getId());
+
+    Optional<PersonEntity> deletedPerson = personService.findOne(saved.getId());
+
+    assertThat(deletedPerson).isEmpty();
+
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.delete("/people/" + saved.getId())
+                .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(MockMvcResultMatchers.status().isNoContent());
   }
 }
