@@ -12,6 +12,8 @@ public interface PersonService {
 
   List<PersonEntity> findAll();
 
+  // List<PersonEntity> findAllExtended();
+
   Page<PersonEntity> findAll(Pageable pageable);
 
   Optional<PersonEntity> findOne(Long id);

@@ -31,6 +31,12 @@ public class PersonServiceImpl implements PersonService {
         .collect(Collectors.toList());
   }
 
+  // @Override
+  // public List<PersonEntity> findAllExtended() {
+  //   return StreamSupport.stream(personRepository.findAll().spliterator(), false)
+  //       .collect(Collectors.toList());
+  // }
+
   @Override
   public Page<PersonEntity> findAll(Pageable pageable) {
     return personRepository.findAll(pageable);

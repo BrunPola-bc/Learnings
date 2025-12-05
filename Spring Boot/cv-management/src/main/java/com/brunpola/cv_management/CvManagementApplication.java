@@ -10,5 +10,7 @@ public class CvManagementApplication {
 
   public static void main(String[] args) {
     SpringApplication.run(CvManagementApplication.class, args);
+
+    log.info("CV Management Application started successfully.");
   }
 }

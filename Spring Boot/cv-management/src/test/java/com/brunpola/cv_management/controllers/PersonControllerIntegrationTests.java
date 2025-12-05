@@ -313,4 +313,83 @@ public class PersonControllerIntegrationTests {
 
     assertThat(personSkillExists).isFalse();
   }
+
+  @Test
+  public void TestThatListPeopleExtendedReturnsHttpStatus200() throws Exception {
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.get("/people/extended").contentType(MediaType.APPLICATION_JSON))
+        .andExpect(MockMvcResultMatchers.status().isOk());
+  }
+
+  @Test
+  public void TestThatListPeopleExtendedReturnsPeopleWithSkillsAndProjects() throws Exception {
+
+    PersonEntity person = personRepository.findById(1L).orElseThrow();
+
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.get("/people/extended").contentType(MediaType.APPLICATION_JSON))
+        .andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.jsonPath("$[0].id").value(person.getId()))
+        .andExpect(MockMvcResultMatchers.jsonPath("$[0].firstName").value(person.getFirstName()))
+        .andExpect(MockMvcResultMatchers.jsonPath("$[0].lastName").value(person.getLastName()))
+        .andExpect(MockMvcResultMatchers.jsonPath("$[0].skills").isArray())
+        .andExpect(MockMvcResultMatchers.jsonPath("$[0].projects").isArray());
+  }
+
+  @Test
+  public void TestThatGetPersonExtendedReturnsHttpStatus200WhenPersonExists() throws Exception {
+    PersonEntity person = personService.save(TestDataUtil.createTestPersonA());
+
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.get("/people/" + person.getId() + "/extended")
+                .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(MockMvcResultMatchers.status().isOk());
+  }
+
+  @Test
+  public void TestThatGetPersonExtendedReturnsCorrectPerson() throws Exception {
+    PersonEntity person = personService.save(TestDataUtil.createTestPersonA());
+
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.get("/people/" + person.getId() + "/extended")
+                .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(person.getId()))
+        .andExpect(MockMvcResultMatchers.jsonPath("$.firstName").value(person.getFirstName()))
+        .andExpect(MockMvcResultMatchers.jsonPath("$.lastName").value(person.getLastName()))
+        .andExpect(MockMvcResultMatchers.jsonPath("$.skills").isArray())
+        .andExpect(MockMvcResultMatchers.jsonPath("$.projects").isArray());
+  }
+
+  @Test
+  public void TestThatGetPersonExtendedReturnsHttpStatus404WhenPersonDoesNotExist()
+      throws Exception {
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.get("/people/-1/extended")
+                .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(MockMvcResultMatchers.status().isNotFound());
+  }
+
+  @Test
+  @Transactional
+  public void TestThatGetPersonExtendedReturnsMappedSkillsAndProjects() throws Exception {
+    PersonEntity person = personRepository.findById(1L).orElseThrow();
+
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.get("/people/" + person.getId() + "/extended")
+                .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(MockMvcResultMatchers.status().isOk())
+        // Skills exist
+        .andExpect(
+            MockMvcResultMatchers.jsonPath("$.skills.length()").value(person.getSkills().size()))
+        // Projects exist
+        .andExpect(
+            MockMvcResultMatchers.jsonPath("$.projects.length()")
+                .value(person.getProjects().size()));
+  }
 }

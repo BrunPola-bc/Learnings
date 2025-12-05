@@ -10,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.AllArgsConstructor;
@@ -33,9 +34,11 @@ public class PersonEntity {
   private Long id;
 
   @Column(name = "FirstName")
+  @NotNull
   private String firstName;
 
   @Column(name = "LastName")
+  @NotNull
   private String lastName;
 
   @OneToMany(mappedBy = "person", cascade = CascadeType.ALL, orphanRemoval = true)
