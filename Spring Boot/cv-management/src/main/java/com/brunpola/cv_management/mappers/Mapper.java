@@ -1,8 +1,8 @@
 package com.brunpola.cv_management.mappers;
 
-public interface Mapper<A, B> {
+public interface Mapper<ENTITY, DTO> {
 
-  B mapTo(A a);
+  DTO mapTo(ENTITY entity);
 
-  A mapFrom(B b);
+  ENTITY mapFrom(DTO dto);
 }

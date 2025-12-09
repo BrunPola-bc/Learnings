@@ -1,6 +1,7 @@
 package com.brunpola.cv_management.controllers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.brunpola.cv_management.TestDataUtil;
 import com.brunpola.cv_management.domain.dto.PersonDto;
@@ -8,11 +9,10 @@ import com.brunpola.cv_management.domain.entities.PersonEntity;
 import com.brunpola.cv_management.domain.entities.SkillEntity;
 import com.brunpola.cv_management.domain.join.PersonSkill;
 import com.brunpola.cv_management.domain.join.PersonSkillId;
-import com.brunpola.cv_management.repositories.PersonRepository;
+import com.brunpola.cv_management.exceptions.base.NotFoundException;
 import com.brunpola.cv_management.repositories.PersonSkillRepository;
 import com.brunpola.cv_management.services.PersonService;
 import jakarta.transaction.Transactional;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -32,19 +32,19 @@ public class PersonControllerIntegrationTests {
 
   private final MockMvc mockMvc;
   private final ObjectMapper objectMapper;
-  private final PersonRepository personRepository;
+  //   private final PersonRepository personRepository;
   private final PersonSkillRepository personSkillRepository;
   private final PersonService personService;
 
   @Autowired
   public PersonControllerIntegrationTests(
       MockMvc mockMvc,
-      PersonRepository personRepository,
+      //   PersonRepository personRepository,
       PersonService personService,
       PersonSkillRepository personSkillRepository) {
     this.mockMvc = mockMvc;
     this.objectMapper = new ObjectMapper();
-    this.personRepository = personRepository;
+    // this.personRepository = personRepository;
     this.personService = personService;
     this.personSkillRepository = personSkillRepository;
   }
@@ -91,9 +91,9 @@ public class PersonControllerIntegrationTests {
 
   @Test
   public void TestThatListPeopleReturnsListOfPeople() throws Exception {
-    PersonEntity person1 = personRepository.findById(1L).orElseThrow();
-    PersonEntity person2 = personRepository.findById(2L).orElseThrow();
-    PersonEntity person3 = personRepository.findById(3L).orElseThrow();
+    PersonEntity person1 = personService.findOne(1L);
+    PersonEntity person2 = personService.findOne(2L);
+    PersonEntity person3 = personService.findOne(3L);
 
     mockMvc
         .perform(MockMvcRequestBuilders.get("/people").contentType(MediaType.APPLICATION_JSON))
@@ -263,17 +263,27 @@ public class PersonControllerIntegrationTests {
   }
 
   @Test
-  public void TestDeletePersonReturnsHttpStatus204NoContent() throws Exception {
+  public void TestDeletePersonReturnsHttpStatus204NoContentWhenPersonExists() throws Exception {
     PersonEntity personEntityA = TestDataUtil.createTestPersonA();
     PersonEntity saved = personService.save(personEntityA);
 
-    personService.delete(saved.getId());
+    // personService.delete(saved.getId());
 
     mockMvc
         .perform(
             MockMvcRequestBuilders.delete("/people/" + saved.getId())
                 .contentType(MediaType.APPLICATION_JSON))
         .andExpect(MockMvcResultMatchers.status().isNoContent());
+  }
+
+  @Test
+  public void TestDeletePersonReturnsHttpStatus404NotFoundWhenPersonDoesNotExist()
+      throws Exception {
+
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.delete("/people/-1").contentType(MediaType.APPLICATION_JSON))
+        .andExpect(MockMvcResultMatchers.status().isNotFound());
   }
 
   @Test
@@ -281,23 +291,20 @@ public class PersonControllerIntegrationTests {
     PersonEntity personEntityA = TestDataUtil.createTestPersonA();
     PersonEntity saved = personService.save(personEntityA);
 
-    personService.delete(saved.getId());
-
-    Optional<PersonEntity> deletedPerson = personService.findOne(saved.getId());
-
-    assertThat(deletedPerson).isEmpty();
-
     mockMvc
         .perform(
             MockMvcRequestBuilders.delete("/people/" + saved.getId())
                 .contentType(MediaType.APPLICATION_JSON))
         .andExpect(MockMvcResultMatchers.status().isNoContent());
+
+    assertThatThrownBy(() -> personService.findOne(saved.getId()))
+        .isInstanceOf(NotFoundException.class);
   }
 
   @Test
   @Transactional
   public void TestThatDeletePersonServiceCascadeDeletes() throws Exception {
-    PersonEntity person = personService.findOne(1L).orElseThrow();
+    PersonEntity person = personService.findOne(1L);
 
     PersonSkill firsPersonSkill = person.getSkills().stream().findFirst().orElseThrow();
     SkillEntity skill = firsPersonSkill.getSkill();
@@ -325,7 +332,7 @@ public class PersonControllerIntegrationTests {
   @Test
   public void TestThatListPeopleExtendedReturnsPeopleWithSkillsAndProjects() throws Exception {
 
-    PersonEntity person = personRepository.findById(1L).orElseThrow();
+    PersonEntity person = personService.findOne(1L);
 
     mockMvc
         .perform(
@@ -377,7 +384,7 @@ public class PersonControllerIntegrationTests {
   @Test
   @Transactional
   public void TestThatGetPersonExtendedReturnsMappedSkillsAndProjects() throws Exception {
-    PersonEntity person = personRepository.findById(1L).orElseThrow();
+    PersonEntity person = personService.findOne(1L);
 
     mockMvc
         .perform(

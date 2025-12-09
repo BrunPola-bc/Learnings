@@ -6,9 +6,7 @@ import com.brunpola.cv_management.domain.entities.PersonEntity;
 import com.brunpola.cv_management.mappers.ExtendedMapper;
 import com.brunpola.cv_management.mappers.Mapper;
 import com.brunpola.cv_management.services.PersonService;
-import jakarta.validation.Valid;
 import java.util.List;
-import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -41,7 +39,7 @@ public class PersonController {
   }
 
   @PostMapping(path = "")
-  public ResponseEntity<PersonDto> createPerson(@Valid @RequestBody PersonDto personDto) {
+  public ResponseEntity<PersonDto> createPerson(@RequestBody PersonDto personDto) {
     PersonEntity personEntity = personMapper.mapFrom(personDto);
     PersonEntity savedPersonEntity = personService.save(personEntity);
     return new ResponseEntity<>(personMapper.mapTo(savedPersonEntity), HttpStatus.CREATED);
@@ -54,15 +52,9 @@ public class PersonController {
   }
 
   @GetMapping(path = "/{id}")
-  public ResponseEntity<PersonDto> getPerson(@PathVariable("id") Long id) {
-    Optional<PersonEntity> foundPerson = personService.findOne(id);
-    return foundPerson
-        .map(
-            personEntity -> {
-              PersonDto personDto = personMapper.mapTo(personEntity);
-              return new ResponseEntity<>(personDto, HttpStatus.OK);
-            })
-        .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+  public PersonDto getPerson(@PathVariable("id") Long id) {
+    PersonEntity foundPerson = personService.findOne(id);
+    return personMapper.mapTo(foundPerson);
   }
 
   @GetMapping("/search")
@@ -72,32 +64,27 @@ public class PersonController {
   }
 
   @PutMapping("/{id}")
-  public ResponseEntity<PersonDto> fullUpdatePerson(
-      @PathVariable("id") Long id, @Valid @RequestBody PersonDto personDto) {
+  public PersonDto fullUpdatePerson(@PathVariable("id") Long id, @RequestBody PersonDto personDto) {
 
-    if (!personService.isExists(id)) {
-      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-    }
+    // if (!personService.isExists(id)) {
+    //   return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    // }
 
     personDto.setId(id);
     PersonEntity personEntity = personMapper.mapFrom(personDto);
-    PersonEntity savedPersonEntity = personService.save(personEntity);
+    PersonEntity updatedPersonEntity = personService.update(personEntity);
 
-    return new ResponseEntity<>(personMapper.mapTo(savedPersonEntity), HttpStatus.OK);
+    return personMapper.mapTo(updatedPersonEntity);
   }
 
   @PatchMapping(path = "/{id}")
-  public ResponseEntity<PersonDto> partialUpdatePerson(
+  public PersonDto partialUpdatePerson(
       @PathVariable("id") Long id, @RequestBody PersonDto personDto) {
-
-    if (!personService.isExists(id)) {
-      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-    }
 
     PersonEntity personEntity = personMapper.mapFrom(personDto);
     PersonEntity savedPersonEntity = personService.partialUpdate(id, personEntity);
 
-    return new ResponseEntity<>(personMapper.mapTo(savedPersonEntity), HttpStatus.OK);
+    return personMapper.mapTo(savedPersonEntity);
   }
 
   @DeleteMapping(path = "/{id}")
@@ -113,15 +100,8 @@ public class PersonController {
   }
 
   @GetMapping("{id}/extended")
-  public ResponseEntity<PersonExtendedDto> getPersonExtended(@PathVariable("id") Long id) {
-    Optional<PersonEntity> foundPerson = personService.findOne(id);
-    return foundPerson
-        .map(
-            personEntity -> {
-              PersonExtendedDto personExtendedDto =
-                  personExtendedMapper.mapToExtended(personEntity);
-              return new ResponseEntity<>(personExtendedDto, HttpStatus.OK);
-            })
-        .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+  public PersonExtendedDto getPersonExtended(@PathVariable("id") Long id) {
+    PersonEntity foundPerson = personService.findOne(id);
+    return personExtendedMapper.mapToExtended(foundPerson);
   }
 }

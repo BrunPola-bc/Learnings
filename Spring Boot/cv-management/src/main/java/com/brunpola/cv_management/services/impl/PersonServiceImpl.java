@@ -3,6 +3,7 @@ package com.brunpola.cv_management.services.impl;
 import static org.springframework.data.domain.ExampleMatcher.GenericPropertyMatchers.contains;
 
 import com.brunpola.cv_management.domain.entities.PersonEntity;
+import com.brunpola.cv_management.exceptions.person.PersonNotFoundException;
 import com.brunpola.cv_management.repositories.PersonRepository;
 import com.brunpola.cv_management.services.PersonService;
 import java.util.List;
@@ -30,6 +31,14 @@ public class PersonServiceImpl implements PersonService {
   }
 
   @Override
+  public PersonEntity update(PersonEntity person) {
+    if (!isExists(person.getId())) {
+      throw new PersonNotFoundException(person.getId());
+    }
+    return personRepository.save(person);
+  }
+
+  @Override
   public List<PersonEntity> findAll() {
     return StreamSupport.stream(personRepository.findAll().spliterator(), false)
         .collect(Collectors.toList());
@@ -47,8 +56,8 @@ public class PersonServiceImpl implements PersonService {
   }
 
   @Override
-  public Optional<PersonEntity> findOne(Long id) {
-    return personRepository.findById(id);
+  public PersonEntity findOne(Long id) {
+    return personRepository.findById(id).orElseThrow(() -> new PersonNotFoundException(id));
   }
 
   @Override
@@ -71,11 +80,14 @@ public class PersonServiceImpl implements PersonService {
                   .ifPresent(existingPerson::setLastName);
               return personRepository.save(existingPerson);
             })
-        .orElseThrow(() -> new RuntimeException("Person for partial update does not exist"));
+        .orElseThrow(() -> new PersonNotFoundException(id));
   }
 
   @Override
   public void delete(Long id) {
+    if (!isExists(id)) {
+      throw new PersonNotFoundException(id);
+    }
     personRepository.deleteById(id);
   }
 

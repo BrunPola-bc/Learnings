@@ -1,20 +1,24 @@
 package com.brunpola.cv_management.services;
 
 import com.brunpola.cv_management.domain.entities.PersonEntity;
+import jakarta.validation.Valid;
 import java.util.List;
-import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.validation.annotation.Validated;
 
 public interface PersonService {
 
-  PersonEntity save(PersonEntity person);
+  @Validated
+  PersonEntity save(@Valid PersonEntity person);
+
+  PersonEntity update(PersonEntity person);
 
   List<PersonEntity> findAll();
 
   Page<PersonEntity> findAll(Pageable pageable);
 
-  Optional<PersonEntity> findOne(Long id);
+  PersonEntity findOne(Long id);
 
   boolean isExists(Long id);
 
