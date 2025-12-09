@@ -12,8 +12,6 @@ public interface PersonService {
 
   List<PersonEntity> findAll();
 
-  // List<PersonEntity> findAllExtended();
-
   Page<PersonEntity> findAll(Pageable pageable);
 
   Optional<PersonEntity> findOne(Long id);
@@ -23,4 +21,6 @@ public interface PersonService {
   PersonEntity partialUpdate(Long id, PersonEntity personEntity);
 
   void delete(Long id);
+
+  List<PersonEntity> search(PersonEntity personEntity);
 }

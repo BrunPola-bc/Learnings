@@ -65,6 +65,12 @@ public class PersonController {
         .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
   }
 
+  @GetMapping("/search")
+  public List<PersonDto> searchPeople(/*@RequestBody*/ PersonDto personDto) {
+    PersonEntity personEntity = personMapper.mapFrom(personDto);
+    return personService.search(personEntity).stream().map(personMapper::mapTo).toList();
+  }
+
   @PutMapping("/{id}")
   public ResponseEntity<PersonDto> fullUpdatePerson(
       @PathVariable("id") Long id, @Valid @RequestBody PersonDto personDto) {

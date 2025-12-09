@@ -392,4 +392,39 @@ public class PersonControllerIntegrationTests {
             MockMvcResultMatchers.jsonPath("$.projects.length()")
                 .value(person.getProjects().size()));
   }
+
+  @Test
+  public void TestThatSearchPeopleByExampleFiltersCorrectly() throws Exception {
+
+    // Arrange: create 3 people
+    PersonEntity personA = TestDataUtil.createTestPersonA();
+    PersonEntity savedA = personService.save(personA);
+
+    PersonEntity personB = TestDataUtil.createTestPersonB();
+    personB.setFirstName("NOTFOUND");
+    // PersonEntity savedB =
+    personService.save(personB);
+
+    PersonEntity personC = TestDataUtil.createTestPersonA();
+    PersonEntity savedC = personService.save(personC);
+
+    // PersonDto searchExample = new PersonDto();
+    // searchExample.setFirstName("uno");
+    // String searchExampleJson = objectMapper.writeValueAsString(searchExample);
+
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.get("/people/search")
+                .param("firstName", "uno") // works with this if i remove @RequestBody in controller
+                // .param("lastName", "pol")
+                .contentType(MediaType.APPLICATION_JSON)
+            // .content(searchExampleJson) // works with this if i add @RequestBody in controller
+            )
+        .andExpect(MockMvcResultMatchers.status().isOk())
+        // expect only matching people
+        .andExpect(MockMvcResultMatchers.jsonPath("$.length()").value(2))
+        .andExpect(MockMvcResultMatchers.jsonPath("$[0].id").value(savedA.getId()))
+        // .andExpect(MockMvcResultMatchers.jsonPath("$[1].id").value(savedB.getId()))
+        .andExpect(MockMvcResultMatchers.jsonPath("$[1].id").value(savedC.getId()));
+  }
 }

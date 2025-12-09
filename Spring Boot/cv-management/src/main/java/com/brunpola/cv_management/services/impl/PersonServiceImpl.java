@@ -1,5 +1,7 @@
 package com.brunpola.cv_management.services.impl;
 
+import static org.springframework.data.domain.ExampleMatcher.GenericPropertyMatchers.contains;
+
 import com.brunpola.cv_management.domain.entities.PersonEntity;
 import com.brunpola.cv_management.repositories.PersonRepository;
 import com.brunpola.cv_management.services.PersonService;
@@ -7,6 +9,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -73,5 +77,22 @@ public class PersonServiceImpl implements PersonService {
   @Override
   public void delete(Long id) {
     personRepository.deleteById(id);
+  }
+
+  @Override
+  public List<PersonEntity> search(PersonEntity person) {
+    PersonEntity probe = new PersonEntity();
+    probe.setFirstName(person.getFirstName());
+    probe.setLastName(person.getLastName());
+
+    ExampleMatcher matcher =
+        ExampleMatcher.matching()
+            .withIgnoreNullValues()
+            .withMatcher("firstName", contains().ignoreCase())
+            .withMatcher("lastName", contains().ignoreCase());
+
+    Example<PersonEntity> example = Example.of(probe, matcher);
+
+    return personRepository.findAll(example);
   }
 }
