@@ -1,13 +1,8 @@
 package com.brunpola.cv_management.controllers;
 
-import com.brunpola.cv_management.domain.dto.PersonDto;
-import com.brunpola.cv_management.domain.dto.PersonExtendedDto;
-import com.brunpola.cv_management.domain.entities.PersonEntity;
-import com.brunpola.cv_management.mappers.ExtendedMapper;
-import com.brunpola.cv_management.mappers.Mapper;
-import com.brunpola.cv_management.services.PersonService;
 import java.util.List;
-import org.springframework.data.domain.Page;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +15,13 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.brunpola.cv_management.domain.dto.PersonDto;
+import com.brunpola.cv_management.domain.dto.PersonExtendedDto;
+import com.brunpola.cv_management.domain.entities.PersonEntity;
+import com.brunpola.cv_management.mappers.ExtendedMapper;
+import com.brunpola.cv_management.mappers.Mapper;
+import com.brunpola.cv_management.services.PersonService;
 
 @RestController
 @RequestMapping(path = "/people")
@@ -46,9 +48,9 @@ public class PersonController {
   }
 
   @GetMapping(path = "")
-  public Page<PersonDto> listPeople(Pageable pageable) {
-    Page<PersonEntity> people = personService.findAll(pageable);
-    return people.map(personMapper::mapTo);
+  public List<PersonDto> listPeople(Pageable pageable) {
+    List<PersonEntity> people = personService.findAll();
+    return people.stream().map(personMapper::mapTo).collect(Collectors.toList());
   }
 
   @GetMapping(path = "/{id}")
@@ -58,7 +60,7 @@ public class PersonController {
   }
 
   @GetMapping("/search")
-  public List<PersonDto> searchPeople(/*@RequestBody*/ PersonDto personDto) {
+  public List<PersonDto> searchPeople(/* @RequestBody */ PersonDto personDto) {
     PersonEntity personEntity = personMapper.mapFrom(personDto);
     return personService.search(personEntity).stream().map(personMapper::mapTo).toList();
   }
@@ -67,7 +69,7 @@ public class PersonController {
   public PersonDto fullUpdatePerson(@PathVariable("id") Long id, @RequestBody PersonDto personDto) {
 
     // if (!personService.isExists(id)) {
-    //   return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    // return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     // }
 
     personDto.setId(id);
