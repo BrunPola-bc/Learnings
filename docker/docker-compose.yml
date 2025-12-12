@@ -1,0 +1,54 @@
+# version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: cv_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: week1database
+      MYSQL_USER: TestingUser
+      MYSQL_PASSWORD: TestingUserPass
+    ports:
+      - "3307:3306"                 # map host 3307 -> container 3306 (avoid local MySQL conflict)
+    volumes:
+      - ./init:/docker-entrypoint-initdb.d:ro
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping","-h","localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  cv-management:
+    build:
+      context: ../Spring Boot/cv-management   # path from docker/ directory
+      dockerfile: Dockerfile
+    container_name: cv_app
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/week1database
+      SPRING_DATASOURCE_USERNAME: TestingUser
+      SPRING_DATASOURCE_PASSWORD: TestingUserPass
+      # keep your existing JPA props in application.properties for other settings
+    depends_on:
+      - mysql
+    restart: on-failure
+
+  rest-to-my-db:
+    build:
+      context: ../Spring Boot/rest-to-my-db
+      dockerfile: Dockerfile
+    container_name: rest_to_my_db_app
+    ports:
+      - "1607:1607"
+    environment:
+      CV_MANAGEMENT_BASE_URL: http://cv-management:8080
+
+    depends_on:
+      - cv-management
+    restart: on-failure
+
+volumes:
+  mysql_data:

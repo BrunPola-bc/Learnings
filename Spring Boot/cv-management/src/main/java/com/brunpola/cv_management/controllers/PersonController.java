@@ -40,14 +40,14 @@ public class PersonController {
     this.personExtendedMapper = personExtendedMapper;
   }
 
-  @PostMapping(path = "")
+  @PostMapping(path = "/")
   public ResponseEntity<PersonDto> createPerson(@RequestBody PersonDto personDto) {
     PersonEntity personEntity = personMapper.mapFrom(personDto);
     PersonEntity savedPersonEntity = personService.save(personEntity);
     return new ResponseEntity<>(personMapper.mapTo(savedPersonEntity), HttpStatus.CREATED);
   }
 
-  @GetMapping(path = "")
+  @GetMapping(path = "/")
   public List<PersonDto> listPeople(Pageable pageable) {
     List<PersonEntity> people = personService.findAll();
     return people.stream().map(personMapper::mapTo).collect(Collectors.toList());
@@ -101,7 +101,7 @@ public class PersonController {
     return people.stream().map(personExtendedMapper::mapToExtended).toList();
   }
 
-  @GetMapping("{id}/extended")
+  @GetMapping("/{id}/extended")
   public PersonExtendedDto getPersonExtended(@PathVariable("id") Long id) {
     PersonEntity foundPerson = personService.findOne(id);
     return personExtendedMapper.mapToExtended(foundPerson);

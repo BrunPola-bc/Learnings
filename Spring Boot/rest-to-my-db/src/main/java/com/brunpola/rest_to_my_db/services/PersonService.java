@@ -13,16 +13,16 @@ import org.springframework.web.service.annotation.PutExchange;
 
 import com.brunpola.rest_to_my_db.domain.Person;
 
-@HttpExchange(url = "http://localhost:8080", accept = "application/json")
+@HttpExchange(/* url = "${CV_MANAGEMENT_BASE_URL}", */ accept = "application/json")
 public interface PersonService {
 
-  @GetExchange("/people")
+  @GetExchange("/people/")
   List<Person> getAllPeople();
 
   @GetExchange("/people/{id}")
   Person getPersonById(@PathVariable("id") Long id);
 
-  @PostExchange("/people")
+  @PostExchange("/people/")
   Person createPerson(@RequestBody Person person);
 
   @PutExchange("/people/{id}")
