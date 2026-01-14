@@ -87,3 +87,13 @@ build/
 **/dbtest
 **/first
 pitanja.txt
+error msg.txt
+
+Mirth/reports/*.pdf
+Mirth/SimpleMessage/*.txt
+Mirth/AdvancedMessage/*.txt
+
+Mirth/mirth-tests/node_modules/
+Mirth/mirth-tests/.vscode/
+Mirth/mirth-tests/.DS_Store
+Mirth/mirth-tests/npm-debug.log

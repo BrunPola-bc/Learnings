@@ -1,0 +1,22 @@
+MSH|^~\&|SendingApp|SendingFac|ReceivingApp|ReceivingFac|20230101123000||ORU^R01|99999|P|2.3
+PID|1|ABC123|ABC123||DOE^jOhn^m|SMITH^^|19750229|M|||123 MAIN ST^^CITY^ST^12345|||N
+PID|2|||JONES^|||
+PV1|1|I||100^DR^ALICE^B||101^DR^BOB^C||102^DR^CHARLIE^D~103^DR^DAVID^E||20230101120000
+ORC|RE||200||202301011230AA|||105^DR^EVE^F
+OBR|1||300|CBC^COMPLETE BLOOD COUNT|R||20230101121500
+OBR|2||301|BMP^BASIC METABOLIC PANEL|R||bad-date
+OBX|1|NM|WBC^White Blood Cells||5.2|10^9/L|4.0-10.0
+OBX|2|NM|HGB^Hemoglobin||15.5|g/dL|14.0-16.0
+OBX|3|NM|PLT^Platelets||600|10^3/uL|400-500
+OBX|4|NM|RBC^Red Blood Cells||abc|10^6/uL|4.0-5.5
+OBX|5|NM|MCHC^MCHC||33|g/dL|32-35
+OBX|6|NM|EOS^Eosinophils||5|%|invalid-range
+OBX|7|NM|BASO^Basophils||||0-1
+OBX|8|NM|NEUT^Neutrophils||70|%|60-70
+OBX|9|NM|LYMPH^Lymphocytes||50|%|30-50
+OBX|10|NM|MONO^Monocytes||15|%|10-15
+OBX|11|NM|IG^Imm Gran||0|%|0-2
+OBX|12|NM|RBC^RBC No Value|||||
+NTE|1||Patient has multiple notes
+NTE|2
+NTE|3||Empty note field
