@@ -1,0 +1,63 @@
+# version: "3.1"
+services:
+  mc:
+    image: nextgenhealthcare/connect
+    # entrypoint: ["/entrypoint-wrapper.sh"]
+    environment:
+      - DATABASE=postgres
+      - DATABASE_MAX_CONNECTIONS=20
+      - VMOPTIONS=-Xmx512m
+      ###   Everything commented out was moved to /secrets/secret.properties
+      # - DATABASE_URL=jdbc:postgresql://db:5432/mirthdb
+      # - DATABASE_DRIVER=org.postgresql.Driver
+      # - DATABASE_USERNAME=mirthdb
+      # - DATABASE_PASSWORD=mirthdb
+      # - KEYSTORE_STOREPASS=docker_storepass
+      # - KEYSTORE_KEYPASS=docker_keypass
+    secrets:
+      - mirth_properties
+    volumes:
+      - mirth-appdata:/opt/connect/appdata        # Mirth persistent configs/channels
+      - ./mirth-output:/opt/connect/output        # PDF output folder
+      # - ./mirth-input:/opt/connect/input        # Folder with cannels / channel groups to import on first startup
+      # - ./entrypoint-wrapper.sh:/entrypoint-wrapper.sh
+    ports:
+      - 8082:8080/tcp
+      - 8445:8443/tcp
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: postgres
+    environment:
+      - POSTGRES_USER_FILE=/run/secrets/pg_user
+      - POSTGRES_PASSWORD_FILE=/run/secrets/pg_password
+      - POSTGRES_DB_FILE=/run/secrets/pg_database
+    secrets:
+      - pg_user
+      - pg_password
+      - pg_database
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - 5434:5432   # map to host if you want to connect from DBeaver
+    healthcheck:    # optional
+      test: ["CMD-SHELL", "pg_isready -U $(cat /run/secrets/pg_user) -d $(cat /run/secrets/pg_database)"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
+
+volumes:
+  postgres-data:
+  mirth-appdata:
+
+secrets:
+  mirth_properties:
+    file: ./secrets/secret.properties
+  pg_user:
+    file: ./secrets/pg_user
+  pg_password:
+    file: ./secrets/pg_password
+  pg_database:
+    file: ./secrets/pg_database

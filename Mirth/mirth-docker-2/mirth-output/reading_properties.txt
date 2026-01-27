@@ -1,0 +1,66 @@
+java.specification.version -> 17
+install4j.launcherId -> 83
+sun.jnu.encoding -> UTF-8
+java.class.path -> /opt/connect/.install4j/i4jruntime.jar:/opt/connect/.install4j/launcher7f3d482e.jar:/opt/connect/mirth-server-launcher.jar
+java.vm.vendor -> Eclipse Adoptium
+sun.arch.data.model -> 64
+install4j.exeDir -> /opt/connect/
+sun.font.fontmanager -> sun.awt.X11FontManager
+java.vendor.url -> https://adoptium.net/
+org.terracotta.quartz.skipUpdateCheck -> true
+user.timezone -> Etc/UTC
+java.vm.specification.version -> 17
+os.name -> Linux
+sun.java.launcher -> SUN_STANDARD
+user.country -> US
+sun.boot.library.path -> /opt/java/openjdk/lib
+derby.stream.error.method -> com.mirth.connect.server.Mirth.getNullOutputStream
+sun.java.command -> install4j.com.mirth.connect.server.launcher.MirthLauncher_mcserver
+jdk.debug -> release
+sun.cpu.endian -> little
+user.home -> /home/ubuntu
+user.language -> en
+java.specification.vendor -> Oracle Corporation
+java.version.date -> 2024-10-15
+java.home -> /opt/java/openjdk
+file.separator -> /
+java.vm.compressedOopsMode -> 32-bit
+line.separator -> 
+
+java.vm.specification.vendor -> Oracle Corporation
+java.specification.name -> Java Platform API Specification
+exe4j.moduleName -> /opt/connect/mcserver
+java.awt.headless -> true
+org.eclipse.jetty.server.Request.maxFormContentSize -> -1
+log4j2.enableThreadlocals -> false
+jdk.tls.ephemeralDHKeySize -> 2048
+sun.management.compiler -> HotSpot 64-Bit Tiered Compilers
+java.runtime.version -> 17.0.13+11
+user.name -> mirth
+path.separator -> :
+java.net.useSystemProxies -> true
+os.version -> 6.14.0-119037-tuxedo
+java.runtime.name -> OpenJDK Runtime Environment
+file.encoding -> UTF-8
+java.vm.name -> OpenJDK 64-Bit Server VM
+java.vendor.version -> Temurin-17.0.13+11
+install4j.jvmDir -> /opt/java/openjdk
+install4j.appDir -> /opt/connect/
+java.vendor.url.bug -> https://github.com/adoptium/adoptium-support/issues
+jetty.git.hash -> 27bde00a0b95a1d5bbee0eae7984f891d2d0f8c9
+java.io.tmpdir -> /opt/connect/appdata/temp
+com.zaxxer.hikari.pool_number -> 2
+java.version -> 17.0.13
+user.dir -> /opt/connect
+os.arch -> amd64
+java.vm.specification.name -> Java Virtual Machine Specification
+native.encoding -> UTF-8
+java.library.path -> /usr/local/lib64:/usr/java/packages/lib:/usr/lib64:/lib64:/lib:/usr/lib
+java.vm.info -> mixed mode, sharing
+java.vendor -> Eclipse Adoptium
+java.vm.version -> 17.0.13+11
+java.specification.maintenance.version -> 1
+sun.io.unicode.encoding -> UnicodeLittle
+apple.awt.UIElement -> true
+java.class.version -> 61.0
+install4j.swt -> false

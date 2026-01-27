@@ -1,0 +1,39 @@
+# version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mirth-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: mirthdb
+      MYSQL_USER: mirthuser
+      MYSQL_PASSWORD: mirthpass
+    ports:
+      - "3307:3306"   # Host port 3307 avoids conflict with local MySQL
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  mirth:
+    image: nextgenhealthcare/connect:4.5.2
+    container_name: mirth-connect
+    environment:
+      DATABASE_TYPE: mysql
+      DATABASE_HOST: mysql
+      DATABASE_PORT: 3306
+      DATABASE_NAME: mirthdb
+      DATABASE_USER: mirthuser
+      DATABASE_PASSWORD: mirthpass
+    ports:
+      - "8081:8080"   # Host 8081 avoids conflict with local Mirth
+      - "8444:8443"   # Host 8444 for HTTPS
+    volumes:
+      - mirth-data:/opt/connect/appdata
+      - ./mirth-output:/opt/connect/output
+    depends_on:
+      - mysql
+
+volumes:
+  mysql-data:
+  mirth-data:

@@ -1,0 +1,6 @@
+<channelGroup version="4.5.2">
+  <id>Default Group</id>
+  <name>[Default Group]</name>
+  <description>Channels not part of a group will appear here.</description>
+  <channels/>
+</channelGroup>
