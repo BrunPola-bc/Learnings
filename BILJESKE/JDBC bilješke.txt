@@ -1,0 +1,53 @@
+ENTITY:
+  * Napravi klasu za svaku tablicu (1 instanca <-> 1 red tablice)
+  * Često praktično koristit record za jednostavne entitete
+  * Posebne klase za često korištene kombinacije tablica
+    ->  npr. Osoba + sve njezine vještine
+
+MAPPER:
+  * Za pretvaranje resultSet-a u entitete
+
+KOMUNIKACIJA S BAZOM:
+  * Uspostavi konekciju:
+    ->  Connection con = DriverManager.getConnection(url, user, password);
+    ->  Praktično zapakirat u posebnu funkciju ako su url, user, pass uvijek isti
+  * Primjer korištenja konekcije:
+      String sqlQuery = "NEKI QUERY";
+      try ( Connection con = getConnection() ){
+        
+        // Deklaracija statement isto najčešće u try zagradama (try-with-resource blok)
+        Statement stmt = con.createStatement(); // BEZ string arg
+        ILI
+        PreparedStatement prepStmt = con.prepareStatement(query); // SA string arg (query)
+        + postavljanje parametara (index kreće od 1 !!! )
+          ->  npr.  prepStmt.setString(1, "Ime"); // index parametra + vrijednost
+          ->        prepStmt.setInt(2, 0);
+      
+        try( ResultSet rs = stmt.executeQuery(sqlQuery) )
+        ILI
+        try( ResultSet rs = prepStmt.executeQuery() )
+        ILI
+        isto samo executeUpdate()
+        {
+          /* Nešto radimo s ResultSet-om */
+        }
+      } catch (SQLException e){
+        /* Riješi exception */
+      }
+  
+  * Često praktično sve od jednom u istim try zagradama (try-with-resource bloku):
+      try ( Connection con = getConnection();
+          Statement stmt = con.createStatement();
+          ResultSet rs = stmt.executeQuery(sql) ) {
+            // Radi nešto s rs
+      } catch (SQLException e) {
+        // Riješi exception
+      }
+  
+  * executeQuery kad je SELECT (ništa se ne mijenja) -> Vraća ResultSet
+  * executeUpdate kad je INSERT, UPDATE, DELETE, TRUNCATE, CREATE / DROP / ALTER (nešto se mijenja)
+    -> vraća int (broj promijenjenih / zahvaćenih redova)
+
+  * Iz ResultSet-a čitamo s rs.getString("imeStupca"), rs.getInt("imeStupca") i slično
+  
+  
