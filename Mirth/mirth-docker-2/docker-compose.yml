@@ -6,7 +6,7 @@ services:
       - DATABASE=postgres
       - DATABASE_MAX_CONNECTIONS=20
       - VMOPTIONS=-Xmx512m
-      ###   Everything commented out was moved to /secrets/secret.properties
+      ###   Everything commented out was moved to ./secrets/secret.properties
       # - DATABASE_URL=jdbc:postgresql://db:5432/mirthdb
       # - DATABASE_DRIVER=org.postgresql.Driver
       # - DATABASE_USERNAME=mirthdb

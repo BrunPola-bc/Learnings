@@ -17,13 +17,17 @@ fi
 
 echo "Waiting for Mirth to be ready..."
 
-# BusyBox-compatible wait loop
 while true; do
-    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+    HTTP_CODE=$(
+      curl -s -k \
         -u "$USER:$PASS" \
         -H "Accept: application/xml" \
         -H "X-Requested-With: OpenAPI" \
-        "$MIRTH_URL/api/server/status" -k || echo "000")
+        -o /dev/null \
+        -w "%{http_code}" \
+        "$MIRTH_URL/api/server/status" \
+      || echo "000"
+    )
 
     [ "$HTTP_CODE" -eq 200 ] && break
     sleep 3
@@ -32,13 +36,18 @@ done
 echo "Mirth is ready!"
 
 # Restore server configuration
-HTTP_RESPONSE=$(curl -k -s -o /tmp/mirth_response.xml -w "%{http_code}" \
-  -u "$USER:$PASS" \
-  -H "Content-Type: application/xml" \
-  -H "X-Requested-With: OpenAPI" \
-  -X PUT \
-  --data-binary @/mirth-init/server-config-backup.xml \
-  "$MIRTH_URL/api/server/configuration")
+HTTP_RESPONSE=$(
+  curl -s -k \
+    -u "$USER:$PASS" \
+    -H "Content-Type: application/xml" \
+    -H "X-Requested-With: OpenAPI" \
+    -X PUT \
+    --data-binary @/mirth-init/server-config-backup.xml \
+    -o /tmp/mirth_response.xml \
+    -w "%{http_code}" \
+    "$MIRTH_URL/api/server/configuration"
+)
+
 
 if [ "$HTTP_RESPONSE" -ge 200 ] && [ "$HTTP_RESPONSE" -lt 300 ]; then
   echo "Configuration restored successfully (HTTP $HTTP_RESPONSE)"
