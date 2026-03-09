@@ -20,4 +20,10 @@ public class HomeController {
   // public String errorHello() {
   //   return "Hello from ERROR page of CV Management Application!";
   // }
+
+  @GetMapping("/admin")
+  public String adminHello() {
+    return "Hello from ADMIN page of CV Management Application! This should only be accessible to"
+               + " users with ADMIN role.";
+  }
 }

@@ -597,7 +597,7 @@ U konstruktoru implementacije možemo dograditi mapper s dodatnim pravilima pa i
 
 Evo kako zapravo može izgledati `PersonService` interface (u `service` paketu):
 **NOTE: Youtube guide koji sam pratil (iz learning patha, https://www.youtube.com/watch?v=Nv2DERaMx-4) mappira u kontroleru, ali svi drugi izvori vele da se mappiranje radi u servisu.**
-Kod koji imam ga radi ko i on, a ovaj koji pišem u ove bilješke **editam ručno bez testiranja**.
+Kod koji imam u projektu ga radi ko i on, a ovaj koji pišem u ove bilješke **editam ručno bez testiranja**.
 ```java
 package com.brunpola.cv_management.services;
 
@@ -815,6 +815,7 @@ Repository/DAO = Persistance Layer:
 9. CLIENT:
   - Prima JSON
 
+## Learning Path (SQL & Spring Boot) Module ?: Komunikacija s drugim serverom
 ## Rest Client
 Za pozivanje HTTP metoda. Do sad smo radili kak aplikacija/server reagira kad dobije HTTP Request,
 a RestClient se koristi da takav request pošaljemo nekoj aplikaciji/serveru (za to sam do sad koristil Postman).
@@ -936,6 +937,8 @@ Ponekad podatke dohvaćamo od drugih servisa pa zato šaljemo HTTP requestove.
 Drugi servis / aplikacija opet mora proći kroz cijeli put od controllera, preko servisa, do konačno repozitorija
 (u slučaju da je to krajnja aplikacija i da ne šalje novi request negdje dalje).
 
+To je još jedan razlog zašto bi service trebao raditi s DTO, a **konvertirati u Entity** tek **ako komunicira s repozitorijem**.
+
 ---
 
 Novi Service interface sad može izgledati ovako:
@@ -985,7 +988,7 @@ public class UserController {
 }
 ``` 
 
-## Quick notes:
+## Quick notes (Na kraju *SQL & Spring Boot* Learning Patha):
 
 ### Testiranje (MockMVC)
 Skippam za sad jer sam previše vremena uložil u ovu - ajmo reći - skriptu.
@@ -1328,6 +1331,8 @@ Tu završava skripta, ali u nastavku su polu-korisni dodaci
 
 
 ## Struktura maven projekta:
+Ovo pokazuje strukturu maven projekta grupiranog po tipu *bean*a (paket za *controller*e, paket za *entity*je ...).
+Postoji i alternativna struktura (Spring Modulith) koja grupira po funkcionalnim / business jedinicama (paket za *people*, paket za *skills*)
 ```md
 src
   - main
@@ -1364,160 +1369,101 @@ src
 https://docs.spring.io/spring-boot/appendix/application-properties/index.html
 
 ## Annotations
-
+[[Chat GPT rezime onih beanova koje sam mu navel da koristim]]
 ### Application & Configuration
 #### @Bean
 Marks a method whose return value should be registered as a Spring-managed bean in the application context.
-
 #### @Configuration
 Indicates that a class contains bean definitions and Spring configuration.
-
 #### @SpringBootApplication
 Main Spring Boot entry annotation combining configuration, auto-configuration, and component scanning.
-
----
-
 ### Dependency Injection & Stereotypes
 #### @Autowired
 Automatically injects a dependency (bean) from the Spring application context.
-
 #### @Component
 Generic stereotype annotation that marks a class as a Spring-managed component.
-
 #### @Repository
 Specialized component annotation for persistence-layer classes; also enables automatic exception translation.
-
 #### @Service
 Specialized stereotype indicating a business-logic service class.
-
----
-
 ### Web / REST Controllers
 #### @ControllerAdvice
 Defines global exception handling and cross-cutting behavior for controllers.
-
 #### @ExceptionHandler
 Specifies a method that handles a particular exception type in controllers.
-
 #### @ResponseStatus
 Sets the HTTP status returned by a controller method or exception handler.
-
 #### @RestController
 Combination of `@Controller` and `@ResponseBody`, used for REST APIs returning JSON/XML responses.
-
----
-
 ### HTTP Mapping (REST Endpoints)
 #### @DeleteMapping
 Maps HTTP DELETE requests to a controller method.
-
 #### @GetMapping
 Maps HTTP GET requests to a controller method.
-
 #### @PatchMapping
 Maps HTTP PATCH requests to a controller method.
-
 #### @PostMapping
 Maps HTTP POST requests to a controller method.
-
 #### @PutMapping
 Maps HTTP PUT requests to a controller method.
-
----
-
 ### Persistence / JPA (Database)
 #### @Column
 Specifies the column mapping details for an entity field.
-
 #### @EmbeddedId
 Defines a composite primary key embedded within an entity.
-
 #### @Entity
 Marks a class as a JPA entity mapped to a database table.
-
 #### @GeneratedValue
 Specifies how the primary key value is generated.
-
 #### @Id
 Identifies the primary key field of an entity.
-
 #### @JoinColumn
 Specifies the foreign key column used in an entity relationship.
-
 #### @ManyToOne
 Defines a many-to-one relationship between entities.
-
 #### @MapsId
 Maps a relationship field to part of a composite primary key.
-
 #### @OneToMany
 Defines a one-to-many relationship between entities.
-
 #### @Query
 Declares a custom JPQL or SQL query for a repository method.
-
 #### @Table
 Specifies the database table associated with an entity.
-
 #### @Transactional
 Ensures that a method executes within a database transaction.
-
----
-
 ### Validation
 #### @NotNull
 Ensures that a field value cannot be null during validation.
-
 #### @Valid
 Triggers validation of nested objects during request binding or method calls.
-
 #### @Validated
 Enables method-level validation for Spring beans.
-
----
-
 ### Lombok
 #### @AllArgsConstructor
 Generates a constructor containing parameters for all class fields.
-
 #### @Builder
 Implements the builder pattern for easier object creation.
-
 #### @Builder.Default
 Defines default field values when using the Lombok builder pattern.
-
 #### @Data
 Generates getters, setters, `toString`, `equals`, and `hashCode` methods automatically.
-
 #### @EqualsAndHashCode
 Generates `equals()` and `hashCode()` implementations for the class.
-
 #### @Log
 Creates a logger instance automatically for the class.
-
 #### @NoArgsConstructor
 Generates a no-argument constructor.
-
----
-
 ### Testing
 #### @AutoConfigureMockMvc
 Automatically configures MockMvc for testing Spring MVC controllers.
-
 #### @DirtiesContext
 Marks the Spring test context as dirty so it will be reloaded after the test.
-
 #### @ExtendWith
 Registers extensions (such as SpringExtension) for JUnit 5 tests.
-
 #### @SpringBootTest
 Loads the full Spring Boot application context for integration tests.
-
 #### @Test
 Marks a method as a test case.
-
----
-
 ### Java / Other
 #### @Override
 Indicates that a method overrides a method from a superclass or interface.
