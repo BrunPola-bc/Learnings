@@ -1,4 +1,4 @@
-package com.brunpola.cv_management.security;
+package com.brunpola.cv_management.security.model;
 
 public enum Role {
   USER,

@@ -1,5 +1,6 @@
-package com.brunpola.cv_management.security;
+package com.brunpola.cv_management.security.config;
 
+import com.brunpola.cv_management.security.filters.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,6 +28,11 @@ public class SecurityConfig {
     http.authorizeHttpRequests(
         auth -> {
           auth.requestMatchers("/", "/home", "/auth/**").permitAll();
+          // auth.requestMatchers("/people", "/people/*").hasAnyRole("USER", "EXTENDED_USER",
+          // "ADMIN");
+          auth.requestMatchers("/**/extended/*", "/**/extended")
+              .hasAnyRole("EXTENDED_USER", "ADMIN");
+          auth.requestMatchers("/admin/**").hasRole("ADMIN");
           auth.anyRequest().authenticated();
         });
 

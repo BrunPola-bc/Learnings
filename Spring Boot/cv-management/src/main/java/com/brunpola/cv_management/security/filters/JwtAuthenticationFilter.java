@@ -1,6 +1,9 @@
-package com.brunpola.cv_management.security;
+package com.brunpola.cv_management.security.filters;
 
 // import jakarta.annotation.Nonnull;
+import com.brunpola.cv_management.security.model.SecurityUser;
+import com.brunpola.cv_management.security.services.JwtService;
+import com.brunpola.cv_management.security.services.SecurityUserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

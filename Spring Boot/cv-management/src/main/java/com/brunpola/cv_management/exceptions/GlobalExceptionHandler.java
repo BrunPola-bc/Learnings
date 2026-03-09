@@ -36,8 +36,10 @@ public class GlobalExceptionHandler {
     return build(HttpStatus.BAD_REQUEST, errors);
   }
 
-  @ExceptionHandler(Exception.class)
-  public ResponseEntity<Object> handleUnknown(Exception ex) {
-    return build(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error occurred");
-  }
+  // Commenting this one out when working with Spring Security, as it overtakes useful exceptions
+  // and their messages
+  // @ExceptionHandler(Exception.class)
+  // public ResponseEntity<Object> handleUnknown(Exception ex) {
+  //   return build(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error occurred");
+  // }
 }

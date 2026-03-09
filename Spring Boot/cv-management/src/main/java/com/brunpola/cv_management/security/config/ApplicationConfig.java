@@ -1,5 +1,6 @@
-package com.brunpola.cv_management.security;
+package com.brunpola.cv_management.security.config;
 
+import com.brunpola.cv_management.security.services.SecurityUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

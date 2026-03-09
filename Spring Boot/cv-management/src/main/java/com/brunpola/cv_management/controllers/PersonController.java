@@ -1,8 +1,13 @@
 package com.brunpola.cv_management.controllers;
 
+import com.brunpola.cv_management.domain.dto.PersonDto;
+import com.brunpola.cv_management.domain.dto.PersonExtendedDto;
+import com.brunpola.cv_management.domain.entities.PersonEntity;
+import com.brunpola.cv_management.mappers.ExtendedMapper;
+import com.brunpola.cv_management.mappers.Mapper;
+import com.brunpola.cv_management.services.PersonService;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,13 +20,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.brunpola.cv_management.domain.dto.PersonDto;
-import com.brunpola.cv_management.domain.dto.PersonExtendedDto;
-import com.brunpola.cv_management.domain.entities.PersonEntity;
-import com.brunpola.cv_management.mappers.ExtendedMapper;
-import com.brunpola.cv_management.mappers.Mapper;
-import com.brunpola.cv_management.services.PersonService;
 
 @RestController
 @RequestMapping(path = "/people")
@@ -40,14 +38,14 @@ public class PersonController {
     this.personExtendedMapper = personExtendedMapper;
   }
 
-  @PostMapping(path = "/")
+  @PostMapping
   public ResponseEntity<PersonDto> createPerson(@RequestBody PersonDto personDto) {
     PersonEntity personEntity = personMapper.mapFrom(personDto);
     PersonEntity savedPersonEntity = personService.save(personEntity);
     return new ResponseEntity<>(personMapper.mapTo(savedPersonEntity), HttpStatus.CREATED);
   }
 
-  @GetMapping(path = "/")
+  @GetMapping
   public List<PersonDto> listPeople(Pageable pageable) {
     List<PersonEntity> people = personService.findAll();
     return people.stream().map(personMapper::mapTo).collect(Collectors.toList());

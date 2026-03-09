@@ -1,4 +1,4 @@
-package com.brunpola.cv_management.security;
+package com.brunpola.cv_management.security.services;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtBuilder;

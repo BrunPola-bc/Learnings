@@ -1,5 +1,7 @@
-package com.brunpola.cv_management.security;
+package com.brunpola.cv_management.security.services;
 
+import com.brunpola.cv_management.security.model.SecurityUser;
+import com.brunpola.cv_management.security.repositories.SecurityUserRepository;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
