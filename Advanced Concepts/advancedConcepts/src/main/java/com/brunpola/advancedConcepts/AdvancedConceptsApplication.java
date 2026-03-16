@@ -3,11 +3,11 @@ package com.brunpola.advancedConcepts;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@SpringBootApplication
+@SpringBootApplication /* (
+                       exclude = {SecurityAutoConfiguration.class, UserDetailsServiceAutoConfiguration.class}) */
 public class AdvancedConceptsApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(AdvancedConceptsApplication.class, args);
-	}
-
+  public static void main(String[] args) {
+    SpringApplication.run(AdvancedConceptsApplication.class, args);
+  }
 }

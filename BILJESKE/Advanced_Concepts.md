@@ -586,4 +586,896 @@ naši endpointi traže login. Defaultni username je `user`, lozinka je generiran
 Lozinka izgleda kao `abdd02bf-2179-4979-b470-1950b4cd4e61`.
 Login se može izvršiti i na `/login` endpointu, a logout na `/logout`.
 
+## Konfiguracija Securityja
+Uglavnom se klasa nazove `SecurityConfig` ili `SecurityConfiguration` i sprema u `config` paket, ali jedino je bitno da se označi
+sa `@Configuration` anotacijom.
+
+Najčešće se koristi i `@EnableWebSecurity` anotacija, ali ona u Spring Boot projektima NIJE OBAVEZNA jer je automatski uključena
+kroz `@SpringBootApplication` anotaciju. Kad je Spring Security starter uključen u projekt, Spring Boot-ov auto-configuration
+uključuje i SecurityAutoConfiguration pa u nekom dubljem dijelu dođemo i do `@EnableWebSecurity`.
+U čistom Springu, ta anotacija JE POTRBENA jer uključuje potrebne konfiguracije.
+
+U `SecurityConfig` klasi/konfiguraciji želimo definirati ***`@Bean`*** `SecurityFilterChain` kojim definiramo točno kako želimo
+da se naša aplikacija zaštiti. Defaultni filter chain je:
+```
+Security filter chain: [
+  DisableEncodeUrlFilter
+  WebAsyncManagerIntegrationFilter
+  SecurityContextHolderFilter
+  HeaderWriterFilter
+  CsrfFilter
+  LogoutFilter
+  UsernamePasswordAuthenticationFilter
+  DefaultResourcesFilter
+  DefaultLoginPageGeneratingFilter
+  DefaultLogoutPageGeneratingFilter
+  BasicAuthenticationFilter
+  RequestCacheAwareFilter
+  SecurityContextHolderAwareRequestFilter
+  AnonymousAuthenticationFilter
+  ExceptionTranslationFilter
+  AuthorizationFilter
+]
+```
+
+Ako definiramo najoskudniji / njasiromašniji `SecurityFilterChain` *Bean*, bez ikakvih konfiguracija:
+```java
+@Configuration
+@EnableWebSecurity(debug = true)
+public class SecurityConfig {
+
+  @Bean
+  SecurityFilterChain securityFilterChain(HttpSecurity http) {
+    return http.build();
+  }
+}
+```
+taj filter chain "overwritea" defaultni (zapravo se defaultni niti ne stvara nego se stvara ovaj) i postaje:
+```
+Security filter chain: [
+  DisableEncodeUrlFilter
+  WebAsyncManagerIntegrationFilter
+  SecurityContextHolderFilter
+  HeaderWriterFilter
+  CsrfFilter
+  LogoutFilter
+  RequestCacheAwareFilter
+  SecurityContextHolderAwareRequestFilter
+  AnonymousAuthenticationFilter
+  ExceptionTranslationFilter
+]
+```
+
+Objekt `http`, instanca klase `HttpSecurity` je zapravo FilterChain **Builder** kojim možemo
+konfigurirati postojeće i dodavati nove filtere. Slijede neke od opcija
+
+### CSRF
+```java
+http.csrf(csrf -> csrf.disable());
+```
+- Gornja naredba isključuje **CsrfFilter** iz Chaina
+- CSRF je kratica za *Cross-Site Request Forgery*. 
+
+- Primjer:
+  - You’re logged into your bank at `bank.com`.
+  - You visit a malicious site `evil.com`.
+  - `evil.com` has a form that submits a `POST` request to `bank.com/transfer?to=attacker&amount=1000`.
+  - Your browser includes your session cookie automatically → bank thinks it’s you → money gets transferred.
+
+- CSRF iskorištava činjenicu da browser automatski šalje cookiese ili podatke za autentikaciju sa zahtjevima
+- Spring Security rješava problem na način da svaki (state-changing) HTTP zahtjev mora imati i CSRF token 
+- JWT autentikacije i API key autentikacije ga najčešće isključuju jer tokeni koje one šalju već obavljaju (između ostalog)
+  i funkcionalnost kojoj bi služio CSRF token
+- Također, to su STATELESS sesije koje ionako ne čuvaju *authentication credentials* u cookiesima/sesiji već traže token pri svakom zahtjevu
+
+### `authorizeHttpRequests()`
+```java
+http.authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+```
+- Ova funkcija uključuje **AuthorizationFilter** u Chain.
+- Kao agumen prima lambdu koja definira KAKO se autorizira pristup pojedinom endpointu.
+- Definiramo:
+  - *KOJI ENDPOINT* pomoću
+    - `anyRequest()` - svi endpointi
+    - `requestMatchers(...patterns)` - endpointi koji odgovaraju navedenim uzorcima
+      - kao prvi argument možemo i postaviti određenu HTTP metodu pa tako razlikovati `GET /endpoint` i `POST /endpoint`
+  - *TKO SMIJE DO NJEGA* pomoću:
+    - `permitAll()` - SVI smiju do njega
+    - `denyAll()` - nitko ne smije do njega
+    - `authenticated()` - svi autenticirani
+    - `hasRole( role )` - svi s određenim role-om
+    - `hasAnyRole( ...roles )` - svi s barem jednim od navedenih role-ova
+    - `hasAllRoles( ...roles )` - svi sa svim navedenim role-ova
+    - `hasAuthority()` i ostali analogoni funkcijama baziranim na role-ovima
+      - *Side note*: Role je zapravo authority s prefixom `ROLE_`
+      - Znači `hasRole("ADMIN")` `==` `hasAuthority("ROLE_ADMIN")`
+    - `not()` - možemo dodati ispred nekog drugog uvjeta pa dozvoliti pristup npr. svima koji NEMAJU role "BANNED_USER"
+      - `http.authorizeHttpRequests(auth -> auth.anyRequest().not().hasRole("BANNED_USER");`
+    - `...`
+
+- Kompleksniji primjer definiranja autorizacije:
+```java
+http.authorizeHttpRequests(
+    auth -> {
+      auth.requestMatchers("/", "/home", "/auth/**").permitAll();
+      auth.requestMatchers("/people", "/people/*").hasAnyRole("USER", "EXTENDED_USER", "ADMIN");
+      auth.requestMatchers("/**/extended/*", "/**/extended").hasAnyRole("EXTENDED_USER", "ADMIN");
+      auth.requestMatchers("/admin/**").hasRole("ADMIN");
+      auth.anyRequest().authenticated();
+    });
+```
+- Mogu se i chainati pozivi:
+```java
+http.authorizeHttpRequests(
+    auth -> {
+      auth.requestMatchers("/", "/home", "/auth/**").permitAll()
+          .requestMatchers("/people", "/people/*").hasAnyRole("USER", "EXTENDED_USER", "ADMIN")
+          .requestMatchers("/**/extended/*", "/**/extended").hasAnyRole("EXTENDED_USER", "ADMIN")
+          .requestMatchers("/admin/**").hasRole("ADMIN")
+          .anyRequest().authenticated();
+    });
+```
+- **Redoslijed je bitan**: primjenjuje se pravilo prvog matchera koji pogodi određeni endpoint,
+  znači `anyRequest()` bi trebao biti zadnji (fallbackl)
+
+### `sessionManagement()`
+```java
+http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+```
+- Uključuje **SessionManagementFilter** u Filter Chain
+
+- Određujemo kad se `HttpSession` sprema u `SecurityContext`: 
+  - `SessionCreationPolicy.ALWAYS` - uvijek se sprema čak i kad nije potrebno
+  - `SessionCreationPolicy.IF_REQUIRED` - sprema se **AKO** neki dio aplikacije ima potrebu za njom
+  - `SessionCreationPolicy.NEVER` - nikad se ne sprema, ali može koristiti ako već postoji
+  - `SessionCreationPolicy.STATELESS` - ne stvara **NITI** koristi
+
+### `formLogin()`
+```java
+import static org.springframework.security.config.Customizer.withDefaults;
+// ...
+http.formLogin(withDefaults());
+```
+- Omogućuje login preko HTML forme na `/login` endpointu
+
+- Uključuje 4 filtera:
+  - **UsernamePasswordAuthenticationFilter**
+    - obrađuje `POST /login` request
+    - izdvoji *username* i *password*
+    - stvori `UsernamePasswordAuthenticationToken`
+    - proslijedi ga `AuthenticationManager`-u
+    - po potrebi spream SecurityContext i/ili stvara sesiju
+  - **DefaultResourcesFilter**
+    - Ovdej su spremljeni statični resursi koje sljedeći filteri koriste za generiranje stranica
+  - **DefaultLoginPageGeneratingFilter**
+    - Generira defaultni login page / vraća defaultni html login pagea
+    - Ne uključuje se ako definiramo vlastiti login page umjesto korištenja defaultnog
+    - Forma koju generira šalje login podatke koje koristi `UsernamePasswordAuthenticationFilter`
+  - **DefaultLogoutPageGeneratingFilter**
+    - Analogno gore, generira logout stranicu / formu
+    - Ta forma je samo jedan gumb koji triggera `LogoutFilter`
+      - on dalje čisti SecurityContext i isključi sesiju
+
+### `httpBasic()`
+```java
+import static org.springframework.security.config.Customizer.withDefaults;
+// ...
+http.httpBasic(withDefaults());
+```
+- Uključuje **BasicAuthenticationFilter** u Chain
+- Omogućuje login preko Basic HTTP authentication
+- To je login preko headera HTTP requesta, ne preko html forme
+- Uz request šaljemo `Authorization` header s vrijednosti `Basic [encoded to base 64 "user:password"]`
+- Npr za username = `user` i password = `b148ca72-3ad5-4d59-9df3-ef8d6ea9dcbe`:
+  - imamo string: `user:b148ca72-3ad5-4d59-9df3-ef8d6ea9dcbe`
+  - encodiran u base 64: `dXNlcjpiMTQ4Y2E3Mi0zYWQ1LTRkNTktOWRmMy1lZjhkNmVhOWRjYmU=`
+  - šaljemo: `Authorization: Basic dXNlcjpiMTQ4Y2E3Mi0zYWQ1LTRkNTktOWRmMy1lZjhkNmVhOWRjYmU=`
+- BasicAuthenticationFilter:
+  - čita header
+  - dekodira base64
+  - izdvaja username i password
+  - stvara `UsernamePasswordAuthenticationToken`
+  - proslijeđuje ga `AuthenticationManageru`
+  - po potrebi sprema u `SecurityContext`
+- Header je potreban sa svakim requestom
+
 ### JWT Authentication
+
+***NOTE:* Većina funkcija vezanih uz JWT dolazi iz jednog od ovih startera / dependancyja** (koji nisu ponuđeni u spring initializeru):
+```xml
+<dependency>
+  <groupId>io.jsonwebtoken</groupId>
+  <artifactId>jjwt-api</artifactId>
+  <version>0.13.0</version>
+</dependency>
+<dependency>
+  <groupId>io.jsonwebtoken</groupId>
+  <artifactId>jjwt-impl</artifactId>
+  <version>0.13.0</version>
+</dependency>
+<dependency>
+  <groupId>io.jsonwebtoken</groupId>
+  <artifactId>jjwt-jackson</artifactId>
+  <version>0.13.0</version>
+</dependency>
+``` 
+*Verzija 13 je najnovija u trenu pisanja ovih bilješki.*
+
+- Ovo je jedan od pristupa autentikaciji i autorizaciji korištenjem Spring Security-a
+- Uz svaki HTTP zahtjev šaljemo i JWT token u kojem su enkodirani podaci o korisniku: tko je i koja prava ima (roles i/ili authorities)
+- Svaki token ima rok valjanosti i u sebi sadrži informacije kad je generiran i kad mu "istječe rok"
+
+- Da bi implementirali JWT autentikaciju moramo implementirati dvije stvari:
+  1. Način na koji User može doći do / zatražiti generiranje njegovog jwt tokena
+  2. Validaciju tokena, tj. način na koji server može provjeriti ima li korisnik s ovim tokenom pravo pristupa pojedinim dijelovima aplikacije
+
+Prvo ću definirati usera, zatim generiranje tokena i na kraju dohvaćanje tokena.
+
+#### Security User
+`User` tablica u bazama se uglavnom već koristi pa sam ja koristio `SecurityUser` Entity koji implementira `UserDetails` interface. U mojoj implementaciji **EMAIL JE USERNAME**
+```java
+@Entity // <---
+@Builder
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class SecurityUser implements UserDetails {
+
+  @Id @GeneratedValue private Long id;
+  private String firstName;
+  private String lastName;
+  private String email;
+  private String password;
+
+  @ElementCollection(fetch = FetchType.EAGER)
+  @Enumerated(EnumType.STRING)
+  private Set<Role> roles;
+
+  @Override
+  public Collection<? extends GrantedAuthority> getAuthorities() {
+
+    return roles.stream().map(role -> new SimpleGrantedAuthority("ROLE_" + role.name())).toList();
+  }
+
+  // Ovdje još idu ostale implementacije svih potrebnih funkcija iz UserDetails interfacea
+}
+```
+
+Role je jednostavni enum:
+```java
+public enum Role {
+  USER,
+  EXTENDED_USER,
+  ADMIN
+}
+
+```
+
+Analogno imamo i `SecurityUserService` i `SecurityUserRepository`:
+```java
+@Service
+@RequiredArgsConstructor
+public class SecurityUserService implements UserDetailsService {
+
+  private final SecurityUserRepository repository;
+
+  // Obavezna funkcija iz UserDetailsService interfacea
+  @Override
+  public SecurityUser loadUserByUsername(String username) throws UsernameNotFoundException {
+    return repository.findByEmail(username).orElseThrow();
+  }
+}
+```
+```java
+@Repository
+public interface SecurityUserRepository extends JpaRepository<SecurityUser, Long> {
+
+  Optional<SecurityUser> findByEmail(String email);
+}
+```
+
+#### Generiranje tokena
+Sad kad imamo usera, trebamo način kako da se **za njega** generira token.
+U `JwtService` / `JwtUtils` definiramo funkciju za generiranje tokena za danog usera.
+
+*Koristimo funkcije i klase iz `jjwt-api`, `jjwt-impl` i `jjwt-jackson` startera.*
+
+```java
+@Service
+public class JwtService {
+
+  private static final String SECRET_KEY =
+      "DA2FC136AC98A6F1BBC601C5C46627DB19727F68D404C7636AB5012B73F8D95A";
+
+  /***** Signing Key Implementation *****/
+
+  private SecretKey getSigningKey() {
+    byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
+    return Keys.hmacShaKeyFor(keyBytes);
+  }
+
+  /***** Token Generation Implementation *****/
+
+  // From UserDetails + extra claims
+  public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
+    JwtBuilder builder =
+        Jwts.builder()
+            .claims(extraClaims)
+            .subject(userDetails.getUsername())
+            .issuedAt(new Date(System.currentTimeMillis()))
+            .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // 24 sata
+            .signWith(getSigningKey(), Jwts.SIG.HS256);
+
+    return builder.compact(); // String
+  }
+
+  // From UserDetails only (no extra claims)
+  public String generateToken(UserDetails userDetails) {
+    return generateToken(new HashMap<>(), userDetails);
+  }
+}
+```
+
+Koristimo `Jwts` klasu da dohvatimo `JwtBuilder` i na kraju sam JwtToken (`String`).
+Najvažnije je da definiramo `subject` u kojem se u mojoj implementaciji čuva username (email) korisnika
+i `expiration` u kojem se zadaje vrijeme od kad na dalje ovaj token više nije važeći (ovdje 24h).
+Možemo imati i dodatne informacije (claims), ali definiramo i pass-through funkciju koja prima samo userDetails za slučajeve kad dodatnih claimova nema.
+
+Svaki JWT token mora sadržavati i potpis (`.signWith(...)`). Token se sastoji od headera, payloada i signatura.
+Signature je hashirana vrijednost koja se računa koristeći header, payload i secret key koji zna samo server.
+Gore je key definiran u kodu, ali realnije je da bude environment varijabla ili čitan iz propertiesa.
+
+Kad server primi token i želi provjeriti je li token legit ili je mijenjan, ponovo izračuna hash (signature) na temelju headera, payloada i secreta.
+Ako se primljeni i izračunati signature podudaraju, token je ispravan. (Kasnije se još provjerava je li valjan u smislu roka trajanja)
+
+Pomoćna funkcija `getSigningKey()` samo pretvara string ``SECRET_KEY` u instancu `SecretKey` objekta jer funkcija `.signWith()` očekuje takav argument.
+
+#### Dohvaćanje tokena (registracija i autentikacija)
+
+Imamo jednostavni controller s endpointima na kojima se novi user može registrirati i autenticirati.
+Registracija sprema usera u bazu, generira NOVI i vraća token ZA TOG USERA.
+Autentikacija služi da postojeći user (već spremljen u bazu) dobije novi token nakon što sizgubi stari ili starom istekne rok trajanja.
+```java
+@RestController
+@RequestMapping("/auth")
+@RequiredArgsConstructor
+public class AuthenticationController {
+
+  private final AuthenticationService authService;
+
+  @PostMapping("/register-user")
+  public ResponseEntity<AuthenticationResponse> registerUser(@RequestBody RegisterRequest request) {
+    return ResponseEntity.ok(authService.register(request, Role.USER));
+  }
+
+  @PostMapping("/authenticate")
+  public ResponseEntity<AuthenticationResponse> authenticate(
+      @RequestBody AuthenticationRequest request) {
+    return ResponseEntity.ok(authService.authenticate(request));
+  }
+}
+```
+Koristimo posebne klase `RegisterRequest`, `AuthenticationRequest` i `AuthenticationResponse` da iskoristimo Spring Web auto-mapping između JSON bodyja u HTTP requestu i objekata (`@RequestBody` i `@ResponseBody`).
+```java
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class RegisterRequest {
+
+  private String firstName;
+  private String lastName;
+  private String email;
+  private String password;
+}
+
+/* Lombok anotacije */
+public class AuthenticationRequest {
+  private String email;
+  private String password;
+}
+
+/* Lombok anotacije */
+public class AuthenticationResponse {
+  private String token;
+}
+```
+Za registraciju korisnika trebamo više podataka, a za autentikaciju su dovoljni username (u ovoj implementaciji to je email) i password.
+
+Slijedi servis s funkcijama koje controller poziva:
+```java
+@Service
+@RequiredArgsConstructor
+public class AuthenticationService {
+
+  private final SecurityUserRepository repository;
+  private final PasswordEncoder passwordEncoder;
+  private final JwtService jwtService;
+  private final AuthenticationManager authenticationManager;
+
+  public AuthenticationResponse register(RegisterRequest request, Role role) {
+    SecurityUser user =
+        SecurityUser.builder()
+            .firstName(request.getFirstName())
+            .lastName(request.getLastName())
+            .email(request.getEmail())
+            .password(passwordEncoder.encode(request.getPassword()))
+            .roles(Set.of(role))
+            .build();
+    repository.save(user);
+
+    String jwtToken = jwtService.generateToken(user);
+    return AuthenticationResponse.builder().token(jwtToken).build();
+  }
+
+  public AuthenticationResponse authenticate(AuthenticationRequest request) {
+
+    authenticationManager.authenticate(
+        new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+
+    SecurityUser user =
+        repository
+            .findByEmail(request.getEmail())
+            .orElseThrow(() -> new UsernameNotFoundException(request.getEmail()));
+
+    String jwtToken = jwtService.generateToken(user);
+    return AuthenticationResponse.builder().token(jwtToken).build();
+  }
+}
+```
+
+Gore navedena verzija `register` funkcije stvara novog usera na temelju podataka navedenih u requestu i dodjeljuje mu jedan role.
+(Moguće je prepraviti funkciju da omogući više rolova)
+Sprema usera u bazu (ne provjerava da li već postoji) i generira token za njega.
+U bazu spremamo encodirani password.
+Token vraća u `AuthenticationResponse` objektu.
+
+Funkcija `authenitcate()` provjerava odgovara li password username-u.
+Ako da, dohvaća usera iz baze i generira novi token ZA NJEGA.
+Token vraća u `AuthenticationResponse` objektu.
+
+Da bi ovo sve funkcioniralo, morali smo konfigurirati Beanove sljedećih Spring Security klasa u konfiguraciji:
+```java
+@Configuration
+@RequiredArgsConstructor
+public class ApplicationConfig {
+
+  private final SecurityUserService securityUserService;
+
+  @Bean
+  public AuthenticationProvider authenticationProvider() {
+    DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(securityUserService);
+    authProvider.setPasswordEncoder(passwordEncoder());
+    return authProvider;
+  }
+
+  @Bean
+  public PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder();
+  }
+
+  @Bean
+  public AuthenticationManager authenticationManager(AuthenticationConfiguration config) {
+    return config.getAuthenticationManager();
+  }
+}
+```
+
+Definiramo `PasswordEncoder` bean da konfiguriramo koji algoritam enkodiranja passworda koristimo.
+Definiramo `AuthenticationProvider` bean da koinfiguriramo način na koji autenticiramo korisnika.
+Već u konstruktoru mu moramo dati `UserDetailsService` (kod nas `SecuirtyUserService`) da bi znao kako dohvatiti usera iz baze
+i moramo postaviti password encoder koji koristimo.
+Definiramo `AuthenticationManager` bean da bude dostupan u `AuthenticationService` servisu.
+Kreiramo ga preko `AuthenticationConfiguration.getAuthenticationManager()` funkcije, a prilikom toga će `AuthenticationConfiguration` prikupiti sve dostupne Providere.
+
+Alterntivno, provider možemo explicitno definirati u konfiguraciji FilterChaina (u `SecurityFilterChain` beanu):
+`http.authenticationProvider(authenticationProvider)`.
+Ovo je korisno kad imamo više chainova i svakome zadajemo različite providere.
+
+##### Kako autentikacija funkcionira
+Iz requesta stvorimo `UsernamePasswordAuthenticationToken` i zovemo `authenticationManager.authenticate()` da autenticira usera.
+Manager u listi providera iteriranjem pronađe onoga koji zna kako autenticirati danu vrstu tokena. Kad ga nađe, proslijedi mu token.
+`AuthenticationProvider`, konkretno kod nas `DaoAuthenticationProvider`,
+dohvati usera, provjeri odgovara li dobiveni password iz tokena encodianom passwordu iz baze.
+Ako u bilo kojem trenu dođe do greške, baca se exception 
+(`BadCredentialsException` ili `UsernameNotFoundException`...)
+i `authenticate()` funkcija (iz našeg servisa) ne dođe do kraj i ne generira token za usera.
+
+#### Validacija tokena
+Do sada smo objasnili kako user može dobiti token, a sada ćemo objasniti kako server postupa s tokenom koji dobije.
+
+Moramo napisati vlastiti filter koji će validirati token i taj filter na kraju ubaciti u naš filter chain
+(pomoću `SecurityFilterChain` beana u `SecurityConfig` konfiguraciji)
+
+```java
+@Component
+@RequiredArgsConstructor
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+  private final JwtService jwtService;
+  private final SecurityUserService securityUserService;
+
+  @Override
+  protected void doFilterInternal(
+      /* @Nonnull */ HttpServletRequest request,
+      /* @Nonnull */ HttpServletResponse response,
+      /* @Nonnull */ FilterChain filterChain)
+      throws ServletException, IOException {
+
+    final String authHeader = request.getHeader("Authorization");
+    final String jwtToken;
+    final String username;
+
+    // If this clause is true: this isnt a request with a JWT token
+    // => we continue to the next filter (because this one is for JWT authentication)
+    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+      filterChain.doFilter(request, response);
+      return;
+    }
+
+    jwtToken = authHeader.substring(7); // After the "Bearer " prefix
+
+    username = jwtService.extractUsername(jwtToken);
+
+    // If username was found in the token and the user is not yet authenticated
+    if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+
+      SecurityUser user = securityUserService.loadUserByUsername(username);
+
+      if (jwtService.isTokenValid(jwtToken, user)) {
+
+        UsernamePasswordAuthenticationToken authToken =
+            new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+
+        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+        SecurityContextHolder.getContext().setAuthentication(authToken);
+      }
+    }
+    
+    filterChain.doFilter(request, response);
+  }
+}
+```
+Za JWT pristup securityju želimo `STATELESS` SessionCreationPolicy
+i filter koji extenda `OncePerRequestFilter` jer želimo da se JWT token šalje **sa svakim** zahtjevom.
+
+Ovaj filter iz `request`-a vadi *Authorization* header, gdje se mora nalaziti JWT token.
+Taj header mora imati prefix "`Bearer `" što je konvencija za sve autentikacije bazirane na tokenima.
+Ako taj header ne postoji ili njegova vrijednost NE započinje s "`Bearer `", nastavlja se izvođenje idućeg filtera u chainu.
+
+Kad vrijednost headera ispravno započinje, iz nje izvlačimo JWT token i iz njega username.
+(Koristimo pomoćnu frunkciju `extractUsername(token)` iz `jwtService` / `jwtUtils` klase, o njoj niže).
+
+Ako nije pronađen username ili je usera već autenticirao neki od prijašnjih filtera, nastavljamo na idući filter u chainu.
+
+Inače, dohvaćamo usera iz baze i provjeravamo je li token valjan za tog usera (to je njegov token i nije mu prošao rok).
+(Za to ponovo koristimo pomoćnu funkciju iz `jwtService` / `jwtUtils`, o njoj malo niže).
+
+Ako je validan, stvaramo `UsernamePasswordAuthenticationToken` u kojeg spremamo autenticiranog usera.
+Mogli smo koristiti i neki drugi token/objekt, Spring-u je bitno da ima NEKU implementaciju `Authentication` interfacea.
+(`UsernamePasswordAuthenticationToken` extenda `AbstractAuthenticationToken` koji implementira `Authentication`)
+
+Opcionalno, na token dodajemo još informacija sa `setDetails()` funkcijom,
+konkretno sa `new WebAuthenticationDetailsSource().buildDetails(request)` iz requesta vadimo metadata-u:
+IP adresu pošiljatelja i sessionID (null jer je STATELESS policy).
+
+Na kraju taj token u kojem je pohranjen user i njegova prava (authorities) spremamo u `SecurityContext`
+(preko `SecurityContextHolder`-a)
+
+Na kraju filtera moramo pozvati `filterChain.doFilter(request, response);`
+da se nastavi izvođenje filter chaina.
+
+#### JwtService / JwtUtils
+Osim generiranja tokena i potpisa koji su opisani u potpoglavlju "Generiranje Tokena",
+u ovom servisu imamo još i funkcije za validaciju tokena i izvlačenje podataka iz njega.
+
+```java
+@Service
+public class JwtService {
+
+  /* Signing key */
+  /* Token Generating */
+
+  /***** Implementation of extracting claims from the token *****/
+
+  // Get ALL CLAIMS from the token
+  public Claims extractAllClaims(String jwtToken) {
+    return Jwts.parser() // JwtParserBuilder
+        .verifyWith(getSigningKey()) // still an instance of JwtParserBuilder (just signed now)
+        .build() // JwtParser
+        .parseSignedClaims(jwtToken) // Jws<Claims>
+        .getPayload(); // Claims
+  }
+
+  // Get a SPECIFIC CLAIM from the token
+  public <T> T extractClaim(String jwtToken, Function<Claims, T> claimsResolverFunction) {
+    final Claims claims = extractAllClaims(jwtToken);
+    return claimsResolverFunction.apply(claims);
+  }
+
+  // Get USERNAME (the subject) from the token
+  public String extractUsername(String jwtToken) {
+    return extractClaim(jwtToken, Claims::getSubject);
+  }
+
+  // Get EXPIRATION TIME from the token
+  public Date extractExpiration(String jwtToken) {
+    return extractClaim(jwtToken, Claims::getExpiration);
+  }
+
+  /***** Token Validation Implementation *****/
+
+  // We check if the token belongs to the user
+  // and if the token is still non expired
+  public boolean isTokenValid(String jwtToken, UserDetails userDetails) {
+    final String username = extractUsername(jwtToken);
+    boolean isUsernameValid = username.equals(userDetails.getUsername());
+
+    final Date expirationTime = extractExpiration(jwtToken);
+    boolean isTokenNonExpired = expirationTime.after(new Date());
+
+    return isUsernameValid && isTokenNonExpired;
+  }
+}
+```
+*Ponovo koristimo funkcije iz jjwt-api, jjwt-impl i jjwt-jackson startera*, konkretno verzija 0.13.0 (najnovija u vrijeme pisanja)
+
+Za dohvaćanje username i ostalih podataka -- `Claim`-ova -- iz JWT tokena, najbitnija je funkcija `extractAllClaims`:
+- `Jwts.parser()` - započinje buid parsera
+- `verifyWith( getSigningKey() )` - definiramo kako provjervati validnost potpisa kasnije
+- `build()` - daje pareser
+- `parseSignedClaims( jwtToken )` - ovdje se validira token pomoću potpisa postavljenog u builderu i veaća `Jws<Claims>` objekt sa svim podacima
+- `getPayload()` - vraća Claims (extenda `Map<String,Object>`) objekt sa claimovima iz payloada (bez headera i potpisa)
+
+`Claims` klasa ima ugrađene funkcije za dohvaćanje standardnih JWT claimova, npr.:
+- `getSubject()`
+- `getExpiration()`
+- `getIssuedAt()`
+- `...`
+Za dohvaćanje jednog od claimova koristimo `extractClaim` funkciju koja prima token
+i funkciju koju želimo da se na Claimovima iz tokena primjeni.
+Tako za username (koji smo spremili u subject) koristimo `extractClaim(jwtToken, Claims::getSubject)`
+i analogno `extractClaim(jwtToken, Claims::getExpiration)` za rok trajanja.
+
+Validnost tokena provjeravamo boolean funkcijom `isTokenValid` koja provjerava pripada li token danom useru
+i je li rok trajanja (expiration) u budućnosti.
+
+#### Ubacivanje filtera u chain
+U našem `SecurityFilterChain` *Bean*u koristimo funkciju `addFilterBefore()` kojom definiramo koji filter
+i prije kojeg filtera želimo ubaciti u chain.
+Postoje i druge `addFilter*()` funkcije kojima se određuje gdje želimo dodati filter.
+Krajnji `SecurityFilterChain` bean izgleda ovako:
+```java
+@Configuration
+@EnableWebSecurity(debug = true)
+@RequiredArgsConstructor
+public class SecurityConfig {
+
+  private final JwtAuthenticationFilter jwtAuthenticationFilter;
+  private final AuthenticationProvider authenticationProvider;
+
+  @Bean
+  SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
+    // Filter chain config
+    http.csrf(csrf -> csrf.disable());
+
+    http.authorizeHttpRequests(
+        auth -> {
+          auth.requestMatchers("/", "/home", "/auth/**").permitAll();
+          // auth.requestMatchers("/people", "/people/*").hasAnyRole("USER", "EXTENDED_USER", "ADMIN");
+          auth.requestMatchers("/**/extended/*", "/**/extended")
+              .hasAnyRole("EXTENDED_USER", "ADMIN");
+          auth.requestMatchers("/admin/**").hasRole("ADMIN");
+          auth.anyRequest().authenticated();
+        });
+
+    http.sessionManagement(
+        session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
+    http.authenticationProvider(authenticationProvider);
+
+    http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+    return http.build();
+  }
+}
+```
+
+### API key authentication
+
+Malo jednostavniji pristup Securityju korištenjem tokena.
+Ideja je da sa svakim HTTP requestom šaljemo token u headeru.
+Razlika u odnosu na JWT token je ta što nema registracije korisnika,
+generiranja tokena koji pripada samo tom korisniku, isteka roka trajanja
+i ostalih informacija unutar tokena. Token je ili prisutan u zahtjevu ili nije.
+Server može imati evidenciju (bazu) više različitih tokena s različitim autoritetima,
+ali ta se informacija ne može isčitati iz samog tokena i tokeni ne pripadaju pojedinom korisniku.
+
+Pristup demonstriran po uzoru na https://www.baeldung.com/spring-boot-api-key-secret
+
+Započinjemo s pisanjem filtera:
+```java
+@Component
+@RequiredArgsConstructor
+public class ApiKeyAuthenticationFilter extends GenericFilterBean {
+
+  private final ApiKeyAuthenticationService apiKeyAuthenticationService;
+
+  @Override
+  public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain)
+      throws IOException, ServletException {
+    try {
+
+      if (SecurityContextHolder.getContext().getAuthentication() != null) {
+        filterChain.doFilter(request, response);
+        return;
+      }
+
+      Authentication auth =
+          apiKeyAuthenticationService.getAuthentication((HttpServletRequest) request);
+
+      if (auth != null) {
+        SecurityContextHolder.getContext().setAuthentication(auth);
+      }
+
+      filterChain.doFilter(request, response);
+
+    } catch (Exception exp) {
+      HttpServletResponse httpResponse = (HttpServletResponse) response;
+      httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+      httpResponse.setContentType(MediaType.APPLICATION_JSON_VALUE);
+      PrintWriter writer = httpResponse.getWriter();
+      writer.print(exp.getMessage());
+      writer.flush();
+      writer.close();
+    }
+  }
+}
+```
+
+Prvo provjeravamo je li zahtjev već autenticiran nekim drugim filterom,
+ako jest samo prelazimo an izvršavanje idućeg filtera.
+
+Ako nije, pokušavamo ga autenticirati našim `ApiKeyAuthenticationService`-om.
+
+Ako uspješno autenticiramo zahtjev (dobijemo `Authentication` objekt nazad),
+spremamo ga u SecurityContext i nastavljamo s idućim filterom u chainu.
+
+Catch blok je pristup obradi exceptiona i generiranju HTTP Response-a.
+
+Slijedi `ApiKeyAuthenticationService`:
+```java
+@Service
+public class ApiKeyAuthenticationService {
+
+  private static final String AUTH_TOKEN_HEADER_NAME = "X-API-KEY";
+  private static final String AUTH_TOKEN = "Baeldung";
+
+  public Authentication getAuthentication(HttpServletRequest request) {
+    String apiKey = request.getHeader(AUTH_TOKEN_HEADER_NAME);
+
+    if (apiKey == null) {
+      return null;
+    }
+
+    if (!apiKey.equals(AUTH_TOKEN)) {
+      // return null;
+      throw new BadCredentialsException("Invalid API Key");
+    }
+
+    return new ApiKeyAuthentication(apiKey, AuthorityUtils.NO_AUTHORITIES);
+  }
+}
+```
+
+Ovdje iz requesta vadimo header kojem smo sami definirali ime (za razliku od JWT gdje se koristio header `Authentication`).
+U headeru se mora nalaziti token. Ako token ili header s ispravnim nazivom ne postoje, vraćamo filteru `null`.
+Na taj način omogućavamo nastavljanje izvršavanja filter chaina za slučaju da nudimo više mogućnosti autentikacije.
+Ako header i token postoje, ali nisu ispravni, bacamo exception (vjerojatno je da je neko pokušao lažirati token).
+
+Ako je token ispravan, vraćamo instancu `ApiKeyAuthentication` klase, koja extenda `AbstractAuthenticationToken`,
+koja implementira interface `Authentication`.
+
+U ovom primjeru hard-codirane su vrijednosti i ključa i imena headera. Naravno bilo bi bolje da su spremljene u environment varijable,
+ali osim toga u ovom servisu možemo definirati i više ključeva.
+Na primjer, u bazi imamo tablicu ključeva, i na temelju *lookup*-a odredimo koje autoritete možemo dati klijentu
+koji je uz svoj zahtjev poslao konkretan ključ (ako se ključ uopće nalazi u bazi).
+
+```java
+public class ApiKeyAuthentication extends AbstractAuthenticationToken {
+
+  private final String apiKey;
+
+  public ApiKeyAuthentication(String apiKey, Collection<? extends GrantedAuthority> authorities) {
+    super(authorities);
+    this.apiKey = apiKey;
+    setAuthenticated(true);
+  }
+
+  @Override
+  public @Nullable Object getCredentials() {
+    // No credentials for API Key authentication
+    return null;
+  }
+
+  @Override
+  public @Nullable Object getPrincipal() {
+    return apiKey;
+  }
+}
+```
+Ovdje se samo sprema API ključ kao string.
+
+Na kraju, taj filter moramo ubaciti u chain koristeći `SecurityFilterChain` *bean*:
+```java
+@Configuration
+@EnableWebSecurity(debug = true)
+@RequiredArgsConstructor
+public class SecurityConfig {
+
+  private final ApiKeyAuthenticationFilter apiKeyAuthenticationFilter;
+
+  @Bean
+  SecurityFilterChain securityFilterChain(HttpSecurity http) {
+
+    http.csrf(csrf -> csrf.disable())
+        .authorizeHttpRequests(
+            auth -> {
+              auth.requestMatchers("/").permitAll();
+              auth.anyRequest().authenticated();
+            })
+        .httpBasic(withDefaults())
+        .sessionManagement(
+            session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .addFilterBefore(apiKeyAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // <--
+
+    return http.build();
+  }
+}
+```
+
+
+### `securityMatcher()`
+Moguće je konfigurirati Spring Security da različiti endpointi imaju različite filter chainove.
+Npr. možemo definiriati chain za sve endpointe koji započinju s `/api/` imaju api key autentikaciju,
+a svi endpointi koji započinju s `/admin/` da imaju jwt autentikaciju (ili bilo koju drugu).
+
+```java
+@Configuration
+@EnableWebSecurity
+@RequiredArgsConstructor
+public class SecurityConfig {
+
+  private final ApiKeyAuthenticationFilter apiKeyAuthenticationFilter;
+  private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+  @Bean
+  @Order(1)
+  SecurityFilterChain apiChain(HttpSecurity http) {
+
+    http.securityMatcher("/api/**")
+        // Ostale konfiguracije chaina
+        .addFilterBefore(apiKeyAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+    return http.build();
+  }
+  
+  @Bean
+  @Order(2)
+  SecurityFilterChain adminChain(HttpSecurity http) {
+
+    http.securityMatcher("/admin/**")
+        // Ostale konfiguracije chaina
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+    return http.build();
+  }
+}
+```
+
+Važno je da `SecurityFilterChain` *bean*ovi budu pravilno orderani anotacijom `@Order()` jer će se na neki request primjeniti
+SAMO JEDAN chain i to onaj prvi (u smislu `@Order`) koji matcha endpoint requesta.
+
+# Module 4: Microservices Architecture
