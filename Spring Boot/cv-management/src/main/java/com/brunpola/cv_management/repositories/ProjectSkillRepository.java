@@ -5,5 +5,6 @@ import com.brunpola.cv_management.domain.join.ProjectSkillId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+/** JPA Repository for {@link ProjectSkill} entities */
 @Repository
 public interface ProjectSkillRepository extends JpaRepository<ProjectSkill, ProjectSkillId> {}

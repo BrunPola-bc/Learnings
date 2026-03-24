@@ -11,24 +11,33 @@ import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/** TEST */
 @Entity
 @NoArgsConstructor
 @Data
 @Table(name = "PersonSkills")
 public class PersonSkill {
-
+  /** TEST */
   @EmbeddedId private PersonSkillId id;
 
+  /** TEST */
   @ManyToOne
   @MapsId("personId")
   @JoinColumn(name = "PersonID")
   private PersonEntity person;
 
+  /** TEST */
   @ManyToOne
   @MapsId("skillId")
   @JoinColumn(name = "SkillID")
   private SkillEntity skill;
 
+  /**
+   * TEST
+   *
+   * @param person person
+   * @param skill skill
+   */
   public PersonSkill(PersonEntity person, SkillEntity skill) {
     this.person = person;
     this.skill = skill;

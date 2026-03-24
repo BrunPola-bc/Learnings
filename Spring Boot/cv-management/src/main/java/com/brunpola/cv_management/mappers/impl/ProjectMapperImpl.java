@@ -6,11 +6,17 @@ import com.brunpola.cv_management.mappers.Mapper;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 
+/** TEST */
 @Component
 public class ProjectMapperImpl implements Mapper<ProjectEntity, ProjectDto> {
 
   private final ModelMapper modelMapper;
 
+  /**
+   * TEST
+   *
+   * @param modelMapper modelMapper
+   */
   public ProjectMapperImpl(ModelMapper modelMapper) {
     this.modelMapper = modelMapper;
   }

@@ -16,11 +16,20 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+/**
+ * Implementation of {@link PersonService} providing CRUD, search, and partial update operations for
+ * {@link PersonEntity} objects.
+ */
 @Service
 public class PersonServiceImpl implements PersonService {
 
   private final PersonRepository personRepository;
 
+  /**
+   * Constructor for {@link PersonServiceImpl}.
+   *
+   * @param personRepository the {@link PersonRepository} used for persistence operations
+   */
   public PersonServiceImpl(PersonRepository personRepository) {
     this.personRepository = personRepository;
   }

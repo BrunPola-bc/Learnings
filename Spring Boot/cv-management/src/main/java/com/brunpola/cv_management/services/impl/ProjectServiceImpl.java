@@ -8,20 +8,37 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.springframework.stereotype.Service;
 
+/** TEST */
 @Service
 public class ProjectServiceImpl implements ProjectService {
 
   private final ProjectRepository projectRepository;
 
+  /**
+   * TEST
+   *
+   * @param projectRepository the repository for managing project entities
+   */
   public ProjectServiceImpl(ProjectRepository projectRepository) {
     this.projectRepository = projectRepository;
   }
 
+  /**
+   * TEST
+   *
+   * @param project project
+   * @return created ProjectEntity
+   */
   @Override
   public ProjectEntity createProject(ProjectEntity project) {
     return projectRepository.save(project);
   }
 
+  /**
+   * TEST
+   *
+   * @return found ProjectEntity list
+   */
   @Override
   public List<ProjectEntity> findAll() {
     return StreamSupport.stream(projectRepository.findAll().spliterator(), false)

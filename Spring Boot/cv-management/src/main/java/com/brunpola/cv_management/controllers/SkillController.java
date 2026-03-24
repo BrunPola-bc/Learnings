@@ -12,17 +12,30 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+/** TEST */
 @RestController
 public class SkillController {
 
   private final SkillService skillService;
   private final Mapper<SkillEntity, SkillDto> skillMapper;
 
+  /**
+   * TEST
+   *
+   * @param skillService skillService
+   * @param skillMapper skillMapper
+   */
   public SkillController(SkillService skillService, Mapper<SkillEntity, SkillDto> skillMapper) {
     this.skillService = skillService;
     this.skillMapper = skillMapper;
   }
 
+  /**
+   * TEST
+   *
+   * @param skillDto skillDto
+   * @return created SkillDto
+   */
   @PostMapping(path = "/skills")
   public ResponseEntity<SkillDto> createSkill(@RequestBody SkillDto skillDto) {
     SkillEntity skillEntity = skillMapper.mapFrom(skillDto);
@@ -30,6 +43,11 @@ public class SkillController {
     return new ResponseEntity<>(skillMapper.mapTo(savedSkillEntity), HttpStatus.CREATED);
   }
 
+  /**
+   * TEST
+   *
+   * @return list of SkillDtos
+   */
   @GetMapping("/skills")
   public List<SkillDto> listSkills() {
     List<SkillEntity> skills = skillService.findAll();

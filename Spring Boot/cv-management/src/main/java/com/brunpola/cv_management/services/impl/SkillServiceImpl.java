@@ -8,11 +8,17 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.springframework.stereotype.Service;
 
+/** TEST */
 @Service
 public class SkillServiceImpl implements SkillService {
 
   private final SkillRepository skillRepository;
 
+  /**
+   * TEST
+   *
+   * @param skillRepository skillRepository
+   */
   public SkillServiceImpl(SkillRepository skillRepository) {
     this.skillRepository = skillRepository;
   }

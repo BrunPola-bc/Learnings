@@ -19,6 +19,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+/** TEST */
 @Data
 @EqualsAndHashCode(exclude = {"people", "projects"})
 @AllArgsConstructor
@@ -27,21 +28,24 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "Skills")
 public class SkillEntity {
-
+  /** TEST */
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "ID")
   private Long id;
 
+  /** TEST */
   @Column(name = "SkillName")
   @NotNull
   private String skillName;
 
+  /** TEST */
   // Many-to-many via join entity PersonSkill
   @OneToMany(mappedBy = "skill", cascade = CascadeType.ALL, orphanRemoval = true)
   @Builder.Default
   private Set<PersonSkill> people = new HashSet<>();
 
+  /** TEST */
   // Many-to-many via join entity ProjectSkill
   @OneToMany(mappedBy = "skill", cascade = CascadeType.ALL, orphanRemoval = true)
   @Builder.Default
