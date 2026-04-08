@@ -1,5 +1,6 @@
 package com.brunpola.cv_management.security.model.dto;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,7 +24,7 @@ public class RegisterRequest {
   private String lastName;
 
   /** Email of the user to register, also used as username. */
-  private String email;
+  @NotNull private String email;
 
   /** Password for the new account. */
   private String password;

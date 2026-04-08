@@ -4,6 +4,7 @@ import com.brunpola.cv_management.exceptions.base.NotFoundException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.extern.java.Log;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
  * </ul>
  */
 @ControllerAdvice
+@Log
 public class GlobalExceptionHandler {
 
   /**
@@ -70,17 +72,9 @@ public class GlobalExceptionHandler {
     ex.getBindingResult()
         .getFieldErrors()
         .forEach(err -> errors.put(err.getField(), err.getDefaultMessage()));
-    return build(HttpStatus.BAD_REQUEST, errors);
-  }
+    ResponseEntity<Object> responseEntity = build(HttpStatus.BAD_REQUEST, errors);
 
-  /**
-   * Generic fallback handler for unexpected exceptions.
-   *
-   * <p>Disabled when using Spring Security, as it may override more specific security-related
-   * exception handling.
-   */
-  // @ExceptionHandler(Exception.class)
-  // public ResponseEntity<Object> handleUnknown(Exception ex) {
-  //   return build(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error occurred");
-  // }
+    log.info("MOJ LOG @Log: " + responseEntity.getBody());
+    return responseEntity;
+  }
 }

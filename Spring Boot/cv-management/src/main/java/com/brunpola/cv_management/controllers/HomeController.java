@@ -30,11 +30,6 @@ public class HomeController {
     return "Hello from CV Management Application!";
   }
 
-  // @GetMapping("/error")
-  // public String errorHello() {
-  //   return "Hello from ERROR page of CV Management Application!";
-  // }
-
   /**
    * Returns a greeting message for /admin endpoint. Intended for use with ADMIN role.
    *

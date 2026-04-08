@@ -8,7 +8,6 @@ import com.brunpola.cv_management.repositories.PersonRepository;
 import com.brunpola.cv_management.services.PersonService;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
@@ -49,15 +48,8 @@ public class PersonServiceImpl implements PersonService {
 
   @Override
   public List<PersonEntity> findAll() {
-    return StreamSupport.stream(personRepository.findAll().spliterator(), false)
-        .collect(Collectors.toList());
+    return StreamSupport.stream(personRepository.findAll().spliterator(), false).toList();
   }
-
-  // @Override
-  // public List<PersonEntity> findAllExtended() {
-  //   return StreamSupport.stream(personRepository.findAll().spliterator(), false)
-  //       .collect(Collectors.toList());
-  // }
 
   @Override
   public Page<PersonEntity> findAll(Pageable pageable) {

@@ -17,7 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-public class ProjectRepositoryIntegrationTests {
+class ProjectRepositoryIntegrationTests {
 
   private final ProjectRepository underTest;
 
@@ -41,18 +41,17 @@ public class ProjectRepositoryIntegrationTests {
   }
 
   @Test
-  public void testThatProjectCanBeCreatedAndRecalled() {
+  void testThatProjectCanBeCreatedAndRecalled() {
     ProjectEntity project = TestDataUtil.createTestProject();
 
     project = underTest.save(project);
     Optional<ProjectEntity> result = underTest.findById(project.getId());
 
-    assertThat(result).isPresent();
-    assertThat(result.get()).isEqualTo(project);
+    assertThat(result).isPresent().contains(project);
   }
 
   @Test
-  public void testThatMultipleProjectsCanBeRecalled() {
+  void testThatMultipleProjectsCanBeRecalled() {
     ProjectEntity project = TestDataUtil.createTestProject();
     project = underTest.save(project);
 
@@ -65,19 +64,18 @@ public class ProjectRepositoryIntegrationTests {
   }
 
   @Test
-  public void testThatProjectCanBeUpdated() {
+  void testThatProjectCanBeUpdated() {
     ProjectEntity project = TestDataUtil.createTestProject();
     project = underTest.save(project);
     project.setProjectName("NEW NAME");
     project = underTest.save(project);
 
     Optional<ProjectEntity> result = underTest.findById(project.getId());
-    assertThat(result).isPresent();
-    assertThat(result.get()).isEqualTo(project);
+    assertThat(result).isPresent().contains(project);
   }
 
   @Test
-  public void testThatProjectCanBeDeleted() {
+  void testThatProjectCanBeDeleted() {
     ProjectEntity project1 = TestDataUtil.createTestProject();
     underTest.save(project1);
 
@@ -97,7 +95,7 @@ public class ProjectRepositoryIntegrationTests {
 
   @Test
   @Transactional
-  public void testThatDeleteProjectCascadeDeletes() {
+  void testThatDeleteProjectCascadeDeletes() {
     ProjectEntity project = underTest.findById(1L).orElseThrow();
 
     PersonProject firstPersonProject = project.getPeople().stream().findFirst().orElseThrow();

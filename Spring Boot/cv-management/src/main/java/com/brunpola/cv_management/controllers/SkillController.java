@@ -7,7 +7,9 @@ import com.brunpola.cv_management.services.SkillService;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -39,7 +41,7 @@ public class SkillController {
   @PostMapping(path = "/skills")
   public ResponseEntity<SkillDto> createSkill(@RequestBody SkillDto skillDto) {
     SkillEntity skillEntity = skillMapper.mapFrom(skillDto);
-    SkillEntity savedSkillEntity = skillService.createSkill(skillEntity);
+    SkillEntity savedSkillEntity = skillService.save(skillEntity);
     return new ResponseEntity<>(skillMapper.mapTo(savedSkillEntity), HttpStatus.CREATED);
   }
 
@@ -52,5 +54,11 @@ public class SkillController {
   public List<SkillDto> listSkills() {
     List<SkillEntity> skills = skillService.findAll();
     return skills.stream().map(skillMapper::mapTo).toList();
+  }
+
+  @DeleteMapping(path = "skills/{id}")
+  public ResponseEntity<Void> deleteSkill(@PathVariable("id") Long id) {
+    skillService.delete(id);
+    return new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }
 }

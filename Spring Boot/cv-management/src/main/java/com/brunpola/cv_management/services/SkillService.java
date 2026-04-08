@@ -11,7 +11,7 @@ public interface SkillService {
    * @param skill skill
    * @return skillEntity
    */
-  SkillEntity createSkill(SkillEntity skill);
+  SkillEntity save(SkillEntity skill);
 
   /**
    * TEST
@@ -19,4 +19,16 @@ public interface SkillService {
    * @return list of SkillEntity
    */
   List<SkillEntity> findAll();
+
+  /**
+   * TEST
+   *
+   * @param id id of skill
+   * @return skill entity
+   */
+  SkillEntity findOne(long id);
+
+  void delete(Long id);
+
+  boolean isExists(Long id);
 }

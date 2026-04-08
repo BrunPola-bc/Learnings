@@ -13,7 +13,7 @@ public abstract class NotFoundException extends RuntimeException {
    *
    * @param message detailed error message
    */
-  public NotFoundException(String message) {
+  protected NotFoundException(String message) {
     super(message);
   }
 }

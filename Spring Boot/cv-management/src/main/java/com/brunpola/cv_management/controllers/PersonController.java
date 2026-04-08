@@ -6,8 +6,9 @@ import com.brunpola.cv_management.domain.entities.PersonEntity;
 import com.brunpola.cv_management.mappers.ExtendedMapper;
 import com.brunpola.cv_management.mappers.Mapper;
 import com.brunpola.cv_management.services.PersonService;
+import jakarta.validation.Valid;
 import java.util.List;
-import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,7 +49,7 @@ public class PersonController {
    * @return {@link ResponseEntity} containing the saved {@link PersonDto} and HTTP status CREATED
    */
   @PostMapping
-  public ResponseEntity<PersonDto> createPerson(@RequestBody PersonDto personDto) {
+  public ResponseEntity<PersonDto> createPerson(@RequestBody @Valid PersonDto personDto) {
     PersonEntity personEntity = personMapper.mapFrom(personDto);
     PersonEntity savedPersonEntity = personService.save(personEntity);
     return new ResponseEntity<>(personMapper.mapTo(savedPersonEntity), HttpStatus.CREATED);
@@ -61,9 +62,21 @@ public class PersonController {
    * @return list of all people mapped to DTOs
    */
   @GetMapping
-  public List<PersonDto> listPeople(Pageable pageable) {
+  public List<PersonDto> listPeople() {
     List<PersonEntity> people = personService.findAll();
-    return people.stream().map(personMapper::mapTo).collect(Collectors.toList());
+    return people.stream().map(personMapper::mapTo).toList();
+  }
+
+  /**
+   * Lists all people as {@link PersonDto}.
+   *
+   * @param pageable optional pagination information (currently not applied in mapping)
+   * @return list of all people mapped to DTOs
+   */
+  @GetMapping("/paged")
+  public Page<PersonDto> listPeople(Pageable pageable) {
+    Page<PersonEntity> pagedPeople = personService.findAll(pageable);
+    return pagedPeople.map(personMapper::mapTo);
   }
 
   /**
@@ -99,10 +112,6 @@ public class PersonController {
    */
   @PutMapping("/{id}")
   public PersonDto fullUpdatePerson(@PathVariable("id") Long id, @RequestBody PersonDto personDto) {
-
-    // if (!personService.isExists(id)) {
-    // return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-    // }
 
     personDto.setId(id);
     PersonEntity personEntity = personMapper.mapFrom(personDto);

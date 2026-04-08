@@ -25,7 +25,7 @@ import org.springframework.stereotype.Service;
 public class AuthenticationService {
 
   /** Repository for persisting and retrieving {@link SecurityUser} entities. */
-  private final SecurityUserRepository repository;
+  private final SecurityUserRepository securityUserRepository;
 
   /** Password encoder used to hash user passwords before storage. */
   private final PasswordEncoder passwordEncoder;
@@ -56,7 +56,7 @@ public class AuthenticationService {
             .roles(Set.of(role))
             .build();
 
-    repository.save(user);
+    securityUserRepository.save(user);
 
     String jwtToken = jwtService.generateToken(user);
     return AuthenticationResponse.builder().token(jwtToken).build();
@@ -78,7 +78,7 @@ public class AuthenticationService {
         new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
     SecurityUser user =
-        repository
+        securityUserRepository
             .findByEmail(request.getEmail())
             .orElseThrow(() -> new UsernameNotFoundException(request.getEmail()));
 

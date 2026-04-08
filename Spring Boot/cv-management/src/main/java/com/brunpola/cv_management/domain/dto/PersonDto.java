@@ -1,5 +1,6 @@
 package com.brunpola.cv_management.domain.dto;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -29,8 +30,8 @@ public class PersonDto {
   private Long id;
 
   /** Person's first name. */
-  private String firstName;
+  @NotNull private String firstName;
 
   /** Person's last name. */
-  private String lastName;
+  @NotNull private String lastName;
 }

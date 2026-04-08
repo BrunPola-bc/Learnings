@@ -5,6 +5,7 @@ import com.brunpola.cv_management.security.model.dto.AuthenticationRequest;
 import com.brunpola.cv_management.security.model.dto.AuthenticationResponse;
 import com.brunpola.cv_management.security.model.dto.RegisterRequest;
 import com.brunpola.cv_management.security.services.AuthenticationService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,7 +29,8 @@ public class AuthenticationController {
    * @return authentication response with JWT token and user info
    */
   @PostMapping("/register-user")
-  public ResponseEntity<AuthenticationResponse> registerUser(@RequestBody RegisterRequest request) {
+  public ResponseEntity<AuthenticationResponse> registerUser(
+      @RequestBody @Valid RegisterRequest request) {
     return ResponseEntity.ok(authService.register(request, Role.USER));
   }
 
@@ -40,7 +42,7 @@ public class AuthenticationController {
    */
   @PostMapping("/register-admin")
   public ResponseEntity<AuthenticationResponse> registerAdmin(
-      @RequestBody RegisterRequest request) {
+      @RequestBody @Valid RegisterRequest request) {
     return ResponseEntity.ok(authService.register(request, Role.ADMIN));
   }
 
@@ -52,7 +54,7 @@ public class AuthenticationController {
    */
   @PostMapping("/register-extended-user")
   public ResponseEntity<AuthenticationResponse> registerExtendedUser(
-      @RequestBody RegisterRequest request) {
+      @RequestBody @Valid RegisterRequest request) {
     return ResponseEntity.ok(authService.register(request, Role.EXTENDED_USER));
   }
 

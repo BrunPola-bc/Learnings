@@ -11,7 +11,7 @@ public interface ProjectService {
    * @param project the project to create
    * @return the created project entity
    */
-  ProjectEntity createProject(ProjectEntity project);
+  ProjectEntity save(ProjectEntity project);
 
   /**
    * TEST
@@ -19,4 +19,16 @@ public interface ProjectService {
    * @return list of all projects
    */
   List<ProjectEntity> findAll();
+
+  /**
+   * TEST
+   *
+   * @param id id of project
+   * @return the project entitiy
+   */
+  ProjectEntity findOne(long id);
+
+  void delete(Long id);
+
+  boolean isExists(Long id);
 }

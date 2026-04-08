@@ -3,10 +3,10 @@ package com.brunpola.cv_management.mappers;
 /**
  * Generic interface for mapping an entity to a more detailed DTO (extended version).
  *
- * @param <ENTITY> the entity type
- * @param <DTO> the extended DTO type
+ * @param <EntityT> the entity type
+ * @param <DtoT> the extended DTO type
  */
-public interface ExtendedMapper<ENTITY, DTO> {
+public interface ExtendedMapper<EntityT, DtoT> {
 
   /**
    * Maps the given entity to its extended DTO.
@@ -14,5 +14,5 @@ public interface ExtendedMapper<ENTITY, DTO> {
    * @param entity the entity to map
    * @return the mapped extended DTO
    */
-  DTO mapToExtended(ENTITY entity);
+  DtoT mapToExtended(EntityT entity);
 }

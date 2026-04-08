@@ -21,7 +21,7 @@ import org.springframework.test.annotation.DirtiesContext;
 @SpringBootTest
 // @ExtendWith(SpringExtension.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-public class PersonRepositoryIntegrationTests {
+class PersonRepositoryIntegrationTests {
 
   private final PersonRepository underTest;
 
@@ -45,18 +45,17 @@ public class PersonRepositoryIntegrationTests {
   }
 
   @Test
-  public void testThatPersonCanBeCreatedAndRecalled() {
+  void testThatPersonCanBeCreatedAndRecalled() {
     PersonEntity person = TestDataUtil.createTestPersonB();
 
     person = underTest.save(person);
     Optional<PersonEntity> result = underTest.findById(person.getId());
 
-    assertThat(result).isPresent();
-    assertThat(result.get()).isEqualTo(person);
+    assertThat(result).isPresent().contains(person);
   }
 
   @Test
-  public void testThatMultiplePeopleCanBeCreatedAndRecalled() {
+  void testThatMultiplePeopleCanBeCreatedAndRecalled() {
     PersonEntity personA = TestDataUtil.createTestPersonA();
     personA = underTest.save(personA);
     PersonEntity personB = TestDataUtil.createTestPersonB();
@@ -76,19 +75,18 @@ public class PersonRepositoryIntegrationTests {
   }
 
   @Test
-  public void testThatPersonCanBeUpdated() {
+  void testThatPersonCanBeUpdated() {
     PersonEntity personA = TestDataUtil.createTestPersonA();
     personA = underTest.save(personA);
     personA.setFirstName("NEW NAME");
     personA = underTest.save(personA);
 
     Optional<PersonEntity> result = underTest.findById(personA.getId());
-    assertThat(result).isPresent();
-    assertThat(result.get()).isEqualTo(personA);
+    assertThat(result).isPresent().contains(personA);
   }
 
   @Test
-  public void testThatPersonCanBeDeleted() {
+  void testThatPersonCanBeDeleted() {
     PersonEntity personA = TestDataUtil.createTestPersonA();
     underTest.save(personA);
 
@@ -108,7 +106,7 @@ public class PersonRepositoryIntegrationTests {
 
   @Test
   @Transactional
-  public void testToFetchSkills() {
+  void testToFetchSkills() {
     Optional<PersonEntity> personOpt = underTest.findById(1L);
     assertThat(personOpt).isPresent();
     PersonEntity person = personOpt.get();
@@ -119,7 +117,7 @@ public class PersonRepositoryIntegrationTests {
 
   @Test
   @Transactional
-  public void testThatDeletePersonCascadeDeletes() {
+  void testThatDeletePersonCascadeDeletes() {
     PersonEntity person = underTest.findById(1L).orElseThrow();
 
     PersonSkill firsPersonSkill = person.getSkills().stream().findFirst().orElseThrow();
@@ -148,29 +146,26 @@ public class PersonRepositoryIntegrationTests {
   }
 
   @Test
-  public void testForLastNameContains() {
+  void testForLastNameContains() {
     Optional<PersonEntity> personMOptional = underTest.findById(7L);
     assertThat(personMOptional).isPresent();
     PersonEntity personM = personMOptional.get();
 
-    // Person personA = TestDataUtil.createTestPersonA();
-    // underTest.save(personA);
     PersonEntity personA = underTest.findById(1L).orElseThrow();
 
     Iterable<PersonEntity> peopleWith = underTest.lastNameContains("tt");
 
-    assertThat(peopleWith).contains(personM);
-    assertThat(peopleWith).doesNotContain(personA);
+    assertThat(peopleWith).contains(personM).doesNotContain(personA);
   }
 
   @Test
-  public void testHQL() {
+  void testHQL() {
     Optional<PersonEntity> personMOptional = underTest.findById(7L);
     assertThat(personMOptional).isPresent();
     PersonEntity personM = personMOptional.get();
 
     Iterable<PersonEntity> peopleWith = underTest.testMethod("tt");
 
-    assertThat(peopleWith).doesNotContain(personM);
+    assertThat(peopleWith).isNotEmpty().doesNotContain(personM);
   }
 }

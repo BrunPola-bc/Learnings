@@ -1,6 +1,7 @@
 package com.brunpola.cv_management.security.services;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -23,6 +24,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class JwtService {
 
+  /** Constant representing 24h in milliseconds, used as token expiration time */
+  private static final int ONE_DAY = 1000 * 60 * 60 * 24;
+
   /** Secret key used for signing JWTs (base64 encoded). For real applications, store securely. */
   private static final String SECRET_KEY =
       "DA2FC136AC98A6F1BBC601C5C46627DB19727F68D404C7636AB5012B73F8D95A";
@@ -36,11 +40,15 @@ public class JwtService {
    * @return the {@link Claims} contained in the token
    */
   public Claims extractAllClaims(String jwtToken) {
-    return Jwts.parser() // JwtParserBuilder
-        .verifyWith(getSigningKey()) // still an instance of JwtParserBuilder (just signed now)
-        .build() // JwtParser
-        .parseSignedClaims(jwtToken) // Jws<Claims>
-        .getPayload(); // Claims
+    try {
+      return Jwts.parser() // JwtParserBuilder
+          .verifyWith(getSigningKey()) // still an instance of JwtParserBuilder (just signed now)
+          .build() // JwtParser
+          .parseSignedClaims(jwtToken) // Jws<Claims>
+          .getPayload(); // Claims
+    } catch (ExpiredJwtException e) {
+      return e.getClaims();
+    }
   }
 
   /**
@@ -52,8 +60,12 @@ public class JwtService {
    * @return the extracted claim
    */
   public <T> T extractClaim(String jwtToken, Function<Claims, T> claimsResolverFunction) {
-    final Claims claims = extractAllClaims(jwtToken);
-    return claimsResolverFunction.apply(claims);
+    try {
+      final Claims claims = extractAllClaims(jwtToken);
+      return claimsResolverFunction.apply(claims);
+    } catch (Exception e) {
+      return null;
+    }
   }
 
   /**
@@ -91,7 +103,7 @@ public class JwtService {
             .claims(extraClaims)
             .subject(userDetails.getUsername())
             .issuedAt(new Date(System.currentTimeMillis()))
-            .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // 24h
+            .expiration(new Date(System.currentTimeMillis() + ONE_DAY))
             .signWith(getSigningKey(), Jwts.SIG.HS256);
 
     return builder.compact();
@@ -133,7 +145,7 @@ public class JwtService {
    *
    * @return a {@link SecretKey} instance
    */
-  private SecretKey getSigningKey() {
+  public SecretKey getSigningKey() {
     byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
     return Keys.hmacShaKeyFor(keyBytes);
   }

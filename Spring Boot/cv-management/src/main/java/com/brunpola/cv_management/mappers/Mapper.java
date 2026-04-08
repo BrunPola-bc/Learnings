@@ -3,10 +3,10 @@ package com.brunpola.cv_management.mappers;
 /**
  * Generic interface for mapping between an entity and its DTO.
  *
- * @param <ENTITY> the entity type
- * @param <DTO> the data transfer object type
+ * @param <EntityT> the entity type
+ * @param <DtoT> the data transfer object type
  */
-public interface Mapper<ENTITY, DTO> {
+public interface Mapper<EntityT, DtoT> {
 
   /**
    * Maps the given entity to its corresponding DTO.
@@ -14,7 +14,7 @@ public interface Mapper<ENTITY, DTO> {
    * @param entity the entity to map
    * @return the mapped DTO
    */
-  DTO mapTo(ENTITY entity);
+  DtoT mapTo(EntityT entity);
 
   /**
    * Maps the given DTO to its corresponding entity.
@@ -22,5 +22,5 @@ public interface Mapper<ENTITY, DTO> {
    * @param dto the DTO to map
    * @return the mapped entity
    */
-  ENTITY mapFrom(DTO dto);
+  EntityT mapFrom(DtoT dto);
 }

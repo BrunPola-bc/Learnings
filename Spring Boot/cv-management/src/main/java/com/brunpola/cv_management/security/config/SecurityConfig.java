@@ -18,7 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * provider, and JWT filter integration.
  */
 @Configuration
-@EnableWebSecurity(debug = true)
+@EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -45,7 +45,7 @@ public class SecurityConfig {
    * @throws Exception if the filter chain cannot be built
    */
   @Bean
-  SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+  SecurityFilterChain securityFilterChain(HttpSecurity http) {
 
     // Filter chain config
     http.csrf(csrf -> csrf.disable());
@@ -53,8 +53,6 @@ public class SecurityConfig {
     http.authorizeHttpRequests(
         auth -> {
           auth.requestMatchers("/", "/home", "/auth/**").permitAll();
-          // auth.requestMatchers("/people", "/people/*").hasAnyRole("USER", "EXTENDED_USER",
-          // "ADMIN");
           auth.requestMatchers("/**/extended/*", "/**/extended")
               .hasAnyRole("EXTENDED_USER", "ADMIN");
           auth.requestMatchers("/admin/**").hasRole("ADMIN");

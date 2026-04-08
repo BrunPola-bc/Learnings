@@ -3,7 +3,6 @@ package com.brunpola.cv_management.mappers.impl;
 import com.brunpola.cv_management.domain.dto.PersonExtendedDto;
 import com.brunpola.cv_management.domain.entities.PersonEntity;
 import com.brunpola.cv_management.mappers.ExtendedMapper;
-import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 /**
@@ -36,14 +35,9 @@ public class PersonExtendedMapperImpl implements ExtendedMapper<PersonEntity, Pe
         .id(person.getId())
         .firstName(person.getFirstName())
         .lastName(person.getLastName())
-        .skills(
-            person.getSkills().stream()
-                .map(ps -> skillMapper.mapTo(ps.getSkill()))
-                .collect(Collectors.toList()))
+        .skills(person.getSkills().stream().map(ps -> skillMapper.mapTo(ps.getSkill())).toList())
         .projects(
-            person.getProjects().stream()
-                .map(pp -> projectMapper.mapTo(pp.getProject()))
-                .collect(Collectors.toList()))
+            person.getProjects().stream().map(pp -> projectMapper.mapTo(pp.getProject())).toList())
         .build();
   }
 }

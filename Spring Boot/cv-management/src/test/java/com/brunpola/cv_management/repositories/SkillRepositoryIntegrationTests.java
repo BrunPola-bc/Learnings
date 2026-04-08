@@ -19,7 +19,7 @@ import org.springframework.test.annotation.DirtiesContext;
 
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-public class SkillRepositoryIntegrationTests {
+class SkillRepositoryIntegrationTests {
 
   private final SkillRepository underTest;
 
@@ -43,18 +43,17 @@ public class SkillRepositoryIntegrationTests {
   }
 
   @Test
-  public void testThatSkillCanBeCreatedAndRecalled() {
+  void testThatSkillCanBeCreatedAndRecalled() {
     SkillEntity skill = TestDataUtil.createTestSkill();
 
     skill = underTest.save(skill);
     Optional<SkillEntity> result = underTest.findById(skill.getId());
 
-    assertThat(result).isPresent();
-    assertThat(result.get()).isEqualTo(skill);
+    assertThat(result).isPresent().contains(skill);
   }
 
   @Test
-  public void testThatMultipleSkillsCanBeRecalled() {
+  void testThatMultipleSkillsCanBeRecalled() {
     SkillEntity skill = TestDataUtil.createTestSkill();
     skill = underTest.save(skill);
 
@@ -66,19 +65,18 @@ public class SkillRepositoryIntegrationTests {
   }
 
   @Test
-  public void testThatSkillCanBeUpdated() {
+  void testThatSkillCanBeUpdated() {
     SkillEntity skill = TestDataUtil.createTestSkill();
     skill = underTest.save(skill);
     skill.setSkillName("NEW NAME");
     skill = underTest.save(skill);
 
     Optional<SkillEntity> result = underTest.findById(skill.getId());
-    assertThat(result).isPresent();
-    assertThat(result.get()).isEqualTo(skill);
+    assertThat(result).isPresent().contains(skill);
   }
 
   @Test
-  public void testThatSkillCanBeDeleted() {
+  void testThatSkillCanBeDeleted() {
     SkillEntity skill1 = TestDataUtil.createTestSkill();
     underTest.save(skill1);
 
@@ -98,7 +96,7 @@ public class SkillRepositoryIntegrationTests {
 
   @Test
   @Transactional
-  public void testThatDeleteSkillCascadeDeletes() {
+  void testThatDeleteSkillCascadeDeletes() {
     SkillEntity skill = underTest.findById(1L).orElseThrow();
 
     PersonSkill firstPersonSkill = skill.getPeople().stream().findFirst().orElseThrow();
