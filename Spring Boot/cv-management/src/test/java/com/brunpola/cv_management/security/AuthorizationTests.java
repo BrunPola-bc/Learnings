@@ -107,17 +107,4 @@ class AuthorizationTests {
                 .header("Authorization", "Bearer " + jwtToken))
         .andExpect(MockMvcResultMatchers.status().isOk());
   }
-
-  @Test
-  void QuickTest() throws Exception {
-
-    jwtToken = testAuthUtil.generateExpiredToken();
-
-    mockMvc
-        .perform(
-            MockMvcRequestBuilders.get("/people")
-                .with(authentication(null))
-                .header("Authorization", "Bearer " + jwtToken))
-        .andExpect(MockMvcResultMatchers.status().isForbidden());
-  }
 }

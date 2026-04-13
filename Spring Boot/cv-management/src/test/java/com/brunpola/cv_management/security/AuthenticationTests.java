@@ -106,4 +106,21 @@ class AuthenticationTests {
         .andExpect(MockMvcResultMatchers.status().isOk())
         .andExpect(MockMvcResultMatchers.jsonPath("$.token").isNotEmpty());
   }
+
+  @Test
+  void TestThatInvalidUsernameDoesntGetAuthenticated() throws Exception {
+    testAuthUtil.registerUser(Role.ADMIN);
+
+    AuthenticationRequest authRequest = TestAuthUtil.createTestAuthenticationRequest();
+    authRequest.setEmail("nonexistant@email.com");
+    String jsonRequest = objectMapper.writeValueAsString(authRequest);
+
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.post("/auth/authenticate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonRequest))
+        .andExpect(MockMvcResultMatchers.status().isForbidden())
+        .andExpect(MockMvcResultMatchers.jsonPath("$.token").doesNotExist());
+  }
 }
