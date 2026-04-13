@@ -97,3 +97,6 @@ Mirth/mirth-tests/node_modules/
 Mirth/mirth-tests/.vscode/
 Mirth/mirth-tests/.DS_Store
 Mirth/mirth-tests/npm-debug.log
+
+Spring Boot/TOKENS.txt
+*.secret
