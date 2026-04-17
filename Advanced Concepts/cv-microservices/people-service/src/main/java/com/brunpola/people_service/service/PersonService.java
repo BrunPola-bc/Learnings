@@ -23,11 +23,17 @@ public interface PersonService {
 
   void delete(Long id);
 
+  PersonDto updateProjects(Long id, List<Long> ids);
+
+  PersonDto updateSkills(Long id, List<Long> ids);
+
+  List<PersonDto> findByProjectId(Long projectId);
+
+  List<PersonDto> findBySkillId(Long skillId);
+
   PersonExtendedDto findOneExtended(Long id);
 
   List<PersonExtendedDto> findAllExtended();
 
-  PersonDto updateProjects(Long id, List<Long> ids);
-
-  PersonDto updateSkills(Long id, List<Long> ids);
+  List<PersonDto> findByIds(List<Long> ids);
 }

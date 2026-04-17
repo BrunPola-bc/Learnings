@@ -1,6 +1,7 @@
 package com.brunpola.people_service.domain.dto;
 
-import jakarta.validation.constraints.NotNull;
+import com.brunpola.people_service.domain.external.ProjectDto;
+import com.brunpola.people_service.domain.external.SkillDto;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,9 +16,9 @@ public class PersonExtendedDto {
 
   private Long id;
 
-  @NotNull private String firstName;
-  @NotNull private String lastName;
+  private String firstName;
+  private String lastName;
 
-  private List<Long> projectIds;
-  private List<Long> skillIds;
+  private List<ProjectDto> projects;
+  private List<SkillDto> skills;
 }

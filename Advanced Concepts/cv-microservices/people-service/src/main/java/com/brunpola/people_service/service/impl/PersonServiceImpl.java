@@ -1,11 +1,14 @@
 package com.brunpola.people_service.service.impl;
 
+import com.brunpola.people_service.client.ProjectHttpClient;
+import com.brunpola.people_service.client.SkillHttpClient;
 import com.brunpola.people_service.domain.dto.PersonDto;
 import com.brunpola.people_service.domain.dto.PersonExtendedDto;
 import com.brunpola.people_service.domain.entity.PersonEntity;
+import com.brunpola.people_service.domain.external.ProjectDto;
+import com.brunpola.people_service.domain.external.SkillDto;
 import com.brunpola.people_service.exception.PersonNotFoundException;
-import com.brunpola.people_service.mapper.ExtendedMapper;
-import com.brunpola.people_service.mapper.Mapper;
+import com.brunpola.people_service.mapper.PersonMapper;
 import com.brunpola.people_service.repository.PersonRepository;
 import com.brunpola.people_service.service.PersonService;
 import java.util.List;
@@ -16,23 +19,26 @@ import org.springframework.stereotype.Service;
 public class PersonServiceImpl implements PersonService {
 
   private final PersonRepository personRepository;
-  private final Mapper<PersonEntity, PersonDto> personMapper;
-  private final ExtendedMapper<PersonEntity, PersonExtendedDto> personExtendedMapper;
+  private final PersonMapper personMapper;
+  private final ProjectHttpClient projectClient;
+  private final SkillHttpClient skillClient;
 
   public PersonServiceImpl(
       PersonRepository personRepository,
-      Mapper<PersonEntity, PersonDto> personMapper,
-      ExtendedMapper<PersonEntity, PersonExtendedDto> personExtendedMapper) {
+      PersonMapper personMapper,
+      ProjectHttpClient projectClient,
+      SkillHttpClient skillClient) {
     this.personRepository = personRepository;
     this.personMapper = personMapper;
-    this.personExtendedMapper = personExtendedMapper;
+    this.projectClient = projectClient;
+    this.skillClient = skillClient;
   }
 
   @Override
   public PersonDto save(PersonDto personDto) {
-    PersonEntity personEntity = personMapper.mapFrom(personDto);
+    PersonEntity personEntity = personMapper.toEntity(personDto);
     personEntity = personRepository.save(personEntity);
-    return personMapper.mapTo(personEntity);
+    return personMapper.toDto(personEntity);
   }
 
   @Override
@@ -41,21 +47,21 @@ public class PersonServiceImpl implements PersonService {
       throw new PersonNotFoundException(personDto.getId());
     }
 
-    PersonEntity personEntity = personMapper.mapFrom(personDto);
+    PersonEntity personEntity = personMapper.toEntity(personDto);
     personEntity = personRepository.save(personEntity);
-    return personMapper.mapTo(personEntity);
+    return personMapper.toDto(personEntity);
   }
 
   @Override
   public List<PersonDto> findAll() {
-    return personRepository.findAll().stream().map(personMapper::mapTo).toList();
+    return personRepository.findAll().stream().map(personMapper::toDto).toList();
   }
 
   @Override
   public PersonDto findOne(Long id) {
     PersonEntity personEntity =
         personRepository.findById(id).orElseThrow(() -> new PersonNotFoundException(id));
-    return personMapper.mapTo(personEntity);
+    return personMapper.toDto(personEntity);
   }
 
   @Override
@@ -81,7 +87,7 @@ public class PersonServiceImpl implements PersonService {
                 })
             .orElseThrow(() -> new PersonNotFoundException(id));
 
-    return personMapper.mapTo(updatedPersonEntity);
+    return personMapper.toDto(updatedPersonEntity);
   }
 
   @Override
@@ -90,19 +96,6 @@ public class PersonServiceImpl implements PersonService {
       throw new PersonNotFoundException(id);
     }
     personRepository.deleteById(id);
-  }
-
-  @Override
-  public List<PersonExtendedDto> findAllExtended() {
-    return personRepository.findAll().stream().map(personExtendedMapper::mapToExtended).toList();
-  }
-
-  @Override
-  public PersonExtendedDto findOneExtended(Long id) {
-    PersonEntity entity =
-        personRepository.findById(id).orElseThrow(() -> new PersonNotFoundException(id));
-
-    return personExtendedMapper.mapToExtended(entity);
   }
 
   @Override
@@ -115,7 +108,7 @@ public class PersonServiceImpl implements PersonService {
     person.setSkillIds(skillIds);
 
     PersonEntity saved = personRepository.save(person);
-    return personMapper.mapTo(saved);
+    return personMapper.toDto(saved);
   }
 
   @Override
@@ -128,6 +121,53 @@ public class PersonServiceImpl implements PersonService {
     person.setProjectIds(projectIds);
 
     PersonEntity saved = personRepository.save(person);
-    return personMapper.mapTo(saved);
+    return personMapper.toDto(saved);
+  }
+
+  @Override
+  public List<PersonDto> findByProjectId(Long projectId) {
+    List<PersonEntity> byProjectIdsContaining =
+        personRepository.findByProjectIdsContaining(projectId);
+    return byProjectIdsContaining.stream().map(personMapper::toDto).toList();
+  }
+
+  @Override
+  public List<PersonDto> findBySkillId(Long skillId) {
+    List<PersonEntity> bySkillIdsContaining = personRepository.findBySkillIdsContaining(skillId);
+    return bySkillIdsContaining.stream().map(personMapper::toDto).toList();
+  }
+
+  @Override
+  public PersonExtendedDto findOneExtended(Long id) {
+    PersonEntity personEntity =
+        personRepository.findById(id).orElseThrow(() -> new PersonNotFoundException(id));
+
+    List<ProjectDto> projects = projectClient.getProjectsByIds(personEntity.getProjectIds());
+    List<SkillDto> skills = skillClient.getSkillsByIds(personEntity.getSkillIds());
+
+    return personMapper.toExtendedDto(personEntity, projects, skills);
+  }
+
+  @Override
+  public List<PersonExtendedDto> findAllExtended() {
+
+    List<PersonEntity> personEntities = personRepository.findAll();
+
+    return personEntities.stream()
+        .map(
+            personEntity -> {
+              List<ProjectDto> projects =
+                  projectClient.getProjectsByIds(personEntity.getProjectIds());
+              List<SkillDto> skills = skillClient.getSkillsByIds(personEntity.getSkillIds());
+
+              return personMapper.toExtendedDto(personEntity, projects, skills);
+            })
+        .toList();
+  }
+
+  @Override
+  public List<PersonDto> findByIds(List<Long> ids) {
+    List<PersonEntity> people = personRepository.findAllById(ids);
+    return people.stream().map(personMapper::toDto).toList();
   }
 }

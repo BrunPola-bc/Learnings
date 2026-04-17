@@ -2,6 +2,7 @@ package com.brunpola.projects_service.controller;
 
 import com.brunpola.projects_service.domain.dto.IdsRequestDto;
 import com.brunpola.projects_service.domain.dto.ProjectDto;
+import com.brunpola.projects_service.domain.dto.ProjectExtendedDto;
 import com.brunpola.projects_service.service.ProjectService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -67,5 +69,25 @@ public class ProjectController {
   @PutMapping("/{id}/skills")
   public ProjectDto updateSkills(@PathVariable Long id, @RequestBody IdsRequestDto request) {
     return projectService.updateSkills(id, request.getIds());
+  }
+
+  @GetMapping("/by-skill/{skillId}")
+  public List<ProjectDto> getProjectsBySkillId(@PathVariable Long skillId) {
+    return projectService.findBySkillId(skillId);
+  }
+
+  @GetMapping("/extended")
+  public List<ProjectExtendedDto> listProjectsExtended() {
+    return projectService.findAllExtended();
+  }
+
+  @GetMapping("/{id}/extended")
+  public ProjectExtendedDto getProjectExtended(@PathVariable("id") Long id) {
+    return projectService.findOneExtended(id);
+  }
+
+  @GetMapping("/by-ids")
+  public List<ProjectDto> getProjectsByIds(@RequestParam List<Long> ids) {
+    return projectService.findByIds(ids);
   }
 }

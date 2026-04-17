@@ -1,9 +1,14 @@
 package com.brunpola.skills_service.service.impl;
 
+import com.brunpola.skills_service.client.PeopleHttpClient;
+import com.brunpola.skills_service.client.ProjectHttpClient;
 import com.brunpola.skills_service.domain.dto.SkillDto;
+import com.brunpola.skills_service.domain.dto.SkillExtendedDto;
 import com.brunpola.skills_service.domain.entity.SkillEntity;
+import com.brunpola.skills_service.domain.external.PersonDto;
+import com.brunpola.skills_service.domain.external.ProjectDto;
 import com.brunpola.skills_service.exception.SkillNotFoundException;
-import com.brunpola.skills_service.mapper.Mapper;
+import com.brunpola.skills_service.mapper.SkillMapper;
 import com.brunpola.skills_service.repository.SkillRepository;
 import com.brunpola.skills_service.service.SkillService;
 import java.util.List;
@@ -14,19 +19,26 @@ import org.springframework.stereotype.Service;
 public class SkillServiceImpl implements SkillService {
 
   private final SkillRepository skillRepository;
-  private final Mapper<SkillEntity, SkillDto> skillMapper;
+  private final SkillMapper skillMapper;
+  private final PeopleHttpClient peopleClient;
+  private final ProjectHttpClient projectClient;
 
   public SkillServiceImpl(
-      SkillRepository skillRepository, Mapper<SkillEntity, SkillDto> skillMapper) {
+      SkillRepository skillRepository,
+      SkillMapper skillMapper,
+      PeopleHttpClient peopleClient,
+      ProjectHttpClient projectClient) {
     this.skillRepository = skillRepository;
     this.skillMapper = skillMapper;
+    this.peopleClient = peopleClient;
+    this.projectClient = projectClient;
   }
 
   @Override
   public SkillDto save(SkillDto skillDto) {
-    SkillEntity skillEntity = skillMapper.mapFrom(skillDto);
+    SkillEntity skillEntity = skillMapper.toEntity(skillDto);
     skillEntity = skillRepository.save(skillEntity);
-    return skillMapper.mapTo(skillEntity);
+    return skillMapper.toDto(skillEntity);
   }
 
   @Override
@@ -35,21 +47,21 @@ public class SkillServiceImpl implements SkillService {
       throw new SkillNotFoundException(skillDto.getId());
     }
 
-    SkillEntity skillEntity = skillMapper.mapFrom(skillDto);
+    SkillEntity skillEntity = skillMapper.toEntity(skillDto);
     skillEntity = skillRepository.save(skillEntity);
-    return skillMapper.mapTo(skillEntity);
+    return skillMapper.toDto(skillEntity);
   }
 
   @Override
   public List<SkillDto> findAll() {
-    return skillRepository.findAll().stream().map(skillMapper::mapTo).toList();
+    return skillRepository.findAll().stream().map(skillMapper::toDto).toList();
   }
 
   @Override
   public SkillDto findOne(Long id) {
     SkillEntity skillEntity =
         skillRepository.findById(id).orElseThrow(() -> new SkillNotFoundException(id));
-    return skillMapper.mapTo(skillEntity);
+    return skillMapper.toDto(skillEntity);
   }
 
   @Override
@@ -73,7 +85,7 @@ public class SkillServiceImpl implements SkillService {
                 })
             .orElseThrow(() -> new SkillNotFoundException(id));
 
-    return skillMapper.mapTo(updatedSkillEntity);
+    return skillMapper.toDto(updatedSkillEntity);
   }
 
   @Override
@@ -82,5 +94,37 @@ public class SkillServiceImpl implements SkillService {
       throw new SkillNotFoundException(id);
     }
     skillRepository.deleteById(id);
+  }
+
+  @Override
+  public SkillExtendedDto findOneExtended(Long id) {
+    SkillEntity skillEntity =
+        skillRepository.findById(id).orElseThrow(() -> new SkillNotFoundException(id));
+
+    List<PersonDto> people = peopleClient.findPeopleBySkillId(id);
+    List<ProjectDto> projects = projectClient.findProjectsBySkillId(id);
+
+    return skillMapper.toExtendedDto(skillEntity, people, projects);
+  }
+
+  @Override
+  public List<SkillExtendedDto> findAllExtended() {
+    List<SkillEntity> skillEntities = skillRepository.findAll();
+
+    return skillEntities.stream()
+        .map(
+            skillEntity -> {
+              List<PersonDto> people = peopleClient.findPeopleBySkillId(skillEntity.getId());
+              List<ProjectDto> projects = projectClient.findProjectsBySkillId(skillEntity.getId());
+
+              return skillMapper.toExtendedDto(skillEntity, people, projects);
+            })
+        .toList();
+  }
+
+  @Override
+  public List<SkillDto> findByIds(List<Long> ids) {
+    List<SkillEntity> skills = skillRepository.findAllById(ids);
+    return skills.stream().map(skillMapper::toDto).toList();
   }
 }

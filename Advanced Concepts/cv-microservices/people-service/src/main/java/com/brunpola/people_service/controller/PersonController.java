@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -82,5 +83,20 @@ public class PersonController {
   @PutMapping("/{id}/projects")
   public PersonDto updateProjects(@PathVariable Long id, @RequestBody IdsRequestDto request) {
     return personService.updateProjects(id, request.getIds());
+  }
+
+  @GetMapping("/by-project/{projectId}")
+  public List<PersonDto> getPeopleByProjectId(@PathVariable Long projectId) {
+    return personService.findByProjectId(projectId);
+  }
+
+  @GetMapping("/by-skill/{skillId}")
+  public List<PersonDto> getPeopleBySkillId(@PathVariable Long skillId) {
+    return personService.findBySkillId(skillId);
+  }
+
+  @GetMapping("/by-ids")
+  public List<PersonDto> getPeopleByIds(@RequestParam List<Long> ids) {
+    return personService.findByIds(ids);
   }
 }
