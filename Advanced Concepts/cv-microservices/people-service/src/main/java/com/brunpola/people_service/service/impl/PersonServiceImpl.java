@@ -11,8 +11,13 @@ import com.brunpola.people_service.exception.PersonNotFoundException;
 import com.brunpola.people_service.mapper.PersonMapper;
 import com.brunpola.people_service.repository.PersonRepository;
 import com.brunpola.people_service.service.PersonService;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -37,6 +42,8 @@ public class PersonServiceImpl implements PersonService {
   @Override
   public PersonDto save(PersonDto personDto) {
     PersonEntity personEntity = personMapper.toEntity(personDto);
+    personEntity.setProjectIds(List.of());
+    personEntity.setSkillIds(List.of());
     personEntity = personRepository.save(personEntity);
     return personMapper.toDto(personEntity);
   }
@@ -142,8 +149,12 @@ public class PersonServiceImpl implements PersonService {
     PersonEntity personEntity =
         personRepository.findById(id).orElseThrow(() -> new PersonNotFoundException(id));
 
-    List<ProjectDto> projects = projectClient.getProjectsByIds(personEntity.getProjectIds());
-    List<SkillDto> skills = skillClient.getSkillsByIds(personEntity.getSkillIds());
+    List<Long> projectIds = personEntity.getProjectIds();
+    List<ProjectDto> projects =
+        projectIds.isEmpty() ? List.of() : projectClient.getProjectsByIds(projectIds);
+
+    List<Long> skillIds = personEntity.getSkillIds();
+    List<SkillDto> skills = skillIds.isEmpty() ? List.of() : skillClient.getSkillsByIds(skillIds);
 
     return personMapper.toExtendedDto(personEntity, projects, skills);
   }
@@ -152,13 +163,38 @@ public class PersonServiceImpl implements PersonService {
   public List<PersonExtendedDto> findAllExtended() {
 
     List<PersonEntity> personEntities = personRepository.findAll();
+    Set<Long> allProjectIds =
+        personEntities.stream()
+            .flatMap(entity -> entity.getProjectIds().stream())
+            .collect(Collectors.toSet());
+
+    Set<Long> allSkillIds =
+        personEntities.stream()
+            .flatMap(entity -> entity.getSkillIds().stream())
+            .collect(Collectors.toSet());
+
+    Map<Long, ProjectDto> projectDtoMap =
+        projectClient.getProjectsByIds(new ArrayList<>(allProjectIds)).stream()
+            .collect(Collectors.toMap(ProjectDto::getId, project -> project));
+
+    Map<Long, SkillDto> skillDtoMap =
+        skillClient.getSkillsByIds(new ArrayList<>(allSkillIds)).stream()
+            .collect(Collectors.toMap(SkillDto::getId, skill -> skill));
 
     return personEntities.stream()
         .map(
             personEntity -> {
               List<ProjectDto> projects =
-                  projectClient.getProjectsByIds(personEntity.getProjectIds());
-              List<SkillDto> skills = skillClient.getSkillsByIds(personEntity.getSkillIds());
+                  personEntity.getProjectIds().stream()
+                      .map(projectDtoMap::get)
+                      .filter(Objects::nonNull)
+                      .toList();
+
+              List<SkillDto> skills =
+                  personEntity.getSkillIds().stream()
+                      .map(skillDtoMap::get)
+                      .filter(Objects::nonNull)
+                      .toList();
 
               return personMapper.toExtendedDto(personEntity, projects, skills);
             })

@@ -11,8 +11,13 @@ import com.brunpola.projects_service.exception.ProjectNotFoundException;
 import com.brunpola.projects_service.mapper.ProjectMapper;
 import com.brunpola.projects_service.repository.ProjectRepository;
 import com.brunpola.projects_service.service.ProjectService;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -121,22 +126,35 @@ public class ProjectServiceImpl implements ProjectService {
         projectRepository.findById(id).orElseThrow(() -> new ProjectNotFoundException(id));
 
     List<PersonDto> people = peopleClient.findPeopleByProjectId(id);
-    List<SkillDto> skills =
-        projectEntity.getSkillIds().stream().map(skillClient::getSkillById).toList();
+    List<Long> skillIds = projectEntity.getSkillIds();
+    List<SkillDto> skills = skillIds.isEmpty() ? List.of() : skillClient.getSkillsByIds(skillIds);
 
     return projectMapper.toExtendedDto(projectEntity, people, skills);
   }
 
   @Override
   public List<ProjectExtendedDto> findAllExtended() {
+
     List<ProjectEntity> projectEntities = projectRepository.findAll();
+
+    Set<Long> allSkillIds =
+        projectEntities.stream()
+            .flatMap(entity -> entity.getSkillIds().stream())
+            .collect(Collectors.toSet());
+
+    Map<Long, SkillDto> skillDtoMap =
+        skillClient.getSkillsByIds(new ArrayList<>(allSkillIds)).stream()
+            .collect(Collectors.toMap(SkillDto::getId, skill -> skill));
 
     return projectEntities.stream()
         .map(
             projectEntity -> {
               List<PersonDto> people = peopleClient.findPeopleByProjectId(projectEntity.getId());
               List<SkillDto> skills =
-                  projectEntity.getSkillIds().stream().map(skillClient::getSkillById).toList();
+                  projectEntity.getSkillIds().stream()
+                      .map(skillDtoMap::get)
+                      .filter(Objects::nonNull)
+                      .toList();
 
               return projectMapper.toExtendedDto(projectEntity, people, skills);
             })
