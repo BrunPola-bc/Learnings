@@ -42,8 +42,6 @@ public class PersonServiceImpl implements PersonService {
   @Override
   public PersonDto save(PersonDto personDto) {
     PersonEntity personEntity = personMapper.toEntity(personDto);
-    personEntity.setProjectIds(List.of());
-    personEntity.setSkillIds(List.of());
     personEntity = personRepository.save(personEntity);
     return personMapper.toDto(personEntity);
   }
