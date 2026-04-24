@@ -108,4 +108,22 @@ public class TestDataUtil {
     }
     return personExtendedDto;
   }
+
+  public static List<PersonExtendedDto> samplePeopleExtendedDtos(boolean withIds, int count) {
+    List<PersonExtendedDto> peopleDtos = new ArrayList<>();
+    for (Long i = 1L; i <= count; i++) {
+      PersonExtendedDto personDto =
+          PersonExtendedDto.builder()
+              .firstName("Person " + i)
+              .lastName("Last Name " + i)
+              .projects(List.of(sampleProjectDto()))
+              .skills(List.of(sampleSkillDto()))
+              .build();
+      if (withIds) {
+        personDto.setId(i);
+      }
+      peopleDtos.add(personDto);
+    }
+    return peopleDtos;
+  }
 }
