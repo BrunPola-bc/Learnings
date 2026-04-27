@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,10 +34,12 @@ public class PersonEntity {
   @ElementCollection
   @CollectionTable(name = "person_project_ids", joinColumns = @JoinColumn(name = "person_id"))
   @Column(name = "project_id")
-  private List<Long> projectIds;
+  @Builder.Default
+  private List<Long> projectIds = new ArrayList<>();
 
   @ElementCollection
   @CollectionTable(name = "person_skill_ids", joinColumns = @JoinColumn(name = "person_id"))
   @Column(name = "skill_id")
-  private List<Long> skillIds;
+  @Builder.Default
+  private List<Long> skillIds = new ArrayList<>();
 }
