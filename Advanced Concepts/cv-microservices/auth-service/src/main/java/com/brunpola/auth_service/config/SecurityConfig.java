@@ -13,6 +13,15 @@ import org.springframework.security.web.SecurityFilterChain;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+  private String[] freeResourceUrls = {
+    "/swagger-ui.html",
+    "/swagger-ui/**",
+    "/v3/api-docs/**",
+    "/swagger-resources/**",
+    "/api-docs/**",
+    "/aggregate/**"
+  };
+
   @Bean
   SecurityFilterChain securityFilterChain(HttpSecurity http) {
 
@@ -21,6 +30,7 @@ public class SecurityConfig {
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
             auth -> {
+              auth.requestMatchers(freeResourceUrls).permitAll();
               auth.requestMatchers("/api/auth/**").permitAll();
               auth.anyRequest().authenticated();
             })

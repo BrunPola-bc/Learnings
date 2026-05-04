@@ -17,6 +17,15 @@ public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+  private String[] freeResourceUrls = {
+    "/swagger-ui.html",
+    "/swagger-ui/**",
+    "/v3/api-docs/**",
+    "/swagger-resources/**",
+    "/api-docs/**",
+    "/aggregate/**"
+  };
+
   @Bean
   SecurityFilterChain securityFilterChain(HttpSecurity http) {
 
@@ -25,6 +34,7 @@ public class SecurityConfig {
 
     http.authorizeHttpRequests(
         auth -> {
+          auth.requestMatchers(freeResourceUrls).permitAll();
           auth.requestMatchers("/api/auth/**").permitAll();
           auth.anyRequest().authenticated();
         });
