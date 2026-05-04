@@ -48,6 +48,7 @@ class PersonControllerIntegrationTests {
   @MockitoBean private ProjectHttpClient projectClient;
   @MockitoBean private SkillHttpClient skillClient;
 
+  private static final String FAKE_TOKEN = "Bearer fake-token";
   private static final int INITIAL_PEOPLE_COUNT = 4;
   private final List<PersonEntity> initialPeople =
       TestDataUtil.samplePeopleEntities(false, INITIAL_PEOPLE_COUNT);
@@ -458,14 +459,16 @@ class PersonControllerIntegrationTests {
 
     ProjectDto sampleProject = TestDataUtil.sampleProjectDto();
     SkillDto sampleSkill = TestDataUtil.sampleSkillDto();
-    when(projectClient.getProjectsByIds(List.of(1L))).thenReturn(List.of(sampleProject));
-    when(skillClient.getSkillsByIds(List.of(1L))).thenReturn(List.of(sampleSkill));
+    when(projectClient.getProjectsByIds(List.of(1L), FAKE_TOKEN))
+        .thenReturn(List.of(sampleProject));
+    when(skillClient.getSkillsByIds(List.of(1L), FAKE_TOKEN)).thenReturn(List.of(sampleSkill));
 
     String responseJson =
         mockMvc
             .perform(
                 MockMvcRequestBuilders.get("/api/people/" + EXPECTED_ID + "/extended")
-                    .contentType(MediaType.APPLICATION_JSON))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("Authorization", FAKE_TOKEN))
             .andExpect(MockMvcResultMatchers.status().isOk())
             .andReturn()
             .getResponse()
@@ -487,6 +490,7 @@ class PersonControllerIntegrationTests {
     mockMvc
         .perform(
             MockMvcRequestBuilders.get("/api/people/999/extended")
+                .header("Authorization", FAKE_TOKEN)
                 .contentType(MediaType.APPLICATION_JSON))
         .andExpect(MockMvcResultMatchers.status().isNotFound());
   }
@@ -505,14 +509,15 @@ class PersonControllerIntegrationTests {
     person.setSkillIds(new ArrayList<>(List.of(1L)));
     personRepository.save(person);
 
-    when(projectClient.getProjectsByIds(List.of(1L))).thenReturn(List.of());
-    when(skillClient.getSkillsByIds(List.of(1L))).thenReturn(List.of());
+    when(projectClient.getProjectsByIds(List.of(1L), FAKE_TOKEN)).thenReturn(List.of());
+    when(skillClient.getSkillsByIds(List.of(1L), FAKE_TOKEN)).thenReturn(List.of());
 
     String responseJson =
         mockMvc
             .perform(
                 MockMvcRequestBuilders.get("/api/people/" + EXPECTED_ID + "/extended")
-                    .contentType(MediaType.APPLICATION_JSON))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("Authorization", FAKE_TOKEN))
             .andExpect(MockMvcResultMatchers.status().isOk())
             .andReturn()
             .getResponse()
@@ -535,14 +540,16 @@ class PersonControllerIntegrationTests {
     ProjectDto sampleProject = TestDataUtil.sampleProjectDto();
     SkillDto sampleSkill = TestDataUtil.sampleSkillDto();
 
-    when(projectClient.getProjectsByIds(List.of(1L))).thenReturn(List.of(sampleProject));
-    when(skillClient.getSkillsByIds(List.of(1L))).thenReturn(List.of(sampleSkill));
+    when(projectClient.getProjectsByIds(List.of(1L), FAKE_TOKEN))
+        .thenReturn(List.of(sampleProject));
+    when(skillClient.getSkillsByIds(List.of(1L), FAKE_TOKEN)).thenReturn(List.of(sampleSkill));
 
     String responseJson =
         mockMvc
             .perform(
                 MockMvcRequestBuilders.get("/api/people/extended")
-                    .contentType(MediaType.APPLICATION_JSON))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("Authorization", FAKE_TOKEN))
             .andExpect(MockMvcResultMatchers.status().isOk())
             .andReturn()
             .getResponse()
@@ -567,6 +574,7 @@ class PersonControllerIntegrationTests {
         mockMvc
             .perform(
                 MockMvcRequestBuilders.get("/api/people/extended")
+                    .header("Authorization", "fake token")
                     .contentType(MediaType.APPLICATION_JSON))
             .andExpect(MockMvcResultMatchers.status().isOk())
             .andReturn()

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -42,6 +43,8 @@ class PersonServiceImplTests {
   @Mock private PersonMapper personMapper;
 
   @InjectMocks private PersonServiceImpl personService;
+
+  private static final String FAKE_TOKEN = "fake token";
 
   private final PersonDto personDtoNoId = TestDataUtil.samplePersonDto(false);
   private final PersonEntity personEntityNoId = TestDataUtil.samplePersonEntity(false);
@@ -460,14 +463,15 @@ class PersonServiceImplTests {
 
     // Mocked behavior
     when(personRepository.findById(1L)).thenReturn(Optional.of(personEntityWithId));
-    when(projectClient.getProjectsByIds(List.of(1L))).thenReturn(listOfSampleProjectDto);
-    when(skillClient.getSkillsByIds(List.of(1L))).thenReturn(listOfSampleSkillDto);
+    when(projectClient.getProjectsByIds(List.of(1L), FAKE_TOKEN))
+        .thenReturn(listOfSampleProjectDto);
+    when(skillClient.getSkillsByIds(List.of(1L), FAKE_TOKEN)).thenReturn(listOfSampleSkillDto);
     when(personMapper.toExtendedDto(
             personEntityWithId, listOfSampleProjectDto, listOfSampleSkillDto))
         .thenReturn(personExtendedDtoWithId);
 
     // when
-    PersonExtendedDto result = personService.findOneExtended(1L);
+    PersonExtendedDto result = personService.findOneExtended(1L, FAKE_TOKEN);
 
     // then
     assertEquals(result, personExtendedDtoWithId);
@@ -483,7 +487,7 @@ class PersonServiceImplTests {
     assertThrows(
         PersonNotFoundException.class,
         () -> {
-          personService.findOneExtended(1L);
+          personService.findOneExtended(1L, FAKE_TOKEN);
         });
 
     verify(personRepository).findById(1L);
@@ -504,7 +508,7 @@ class PersonServiceImplTests {
         .thenReturn(personExtendedDtoWithEmptyLists);
 
     // when
-    PersonExtendedDto result = personService.findOneExtended(1L);
+    PersonExtendedDto result = personService.findOneExtended(1L, FAKE_TOKEN);
 
     // then
     assertEquals(personExtendedDtoWithEmptyLists, result);
@@ -545,24 +549,25 @@ class PersonServiceImplTests {
     // mocked behaviour
     when(personRepository.findAll()).thenReturn(people);
     when(projectClient.getProjectsByIds(
-            argThat(list -> list.containsAll(List.of(1L, 2L)) && list.size() == 2)))
+            argThat(list -> list.containsAll(List.of(1L, 2L)) && list.size() == 2), eq(FAKE_TOKEN)))
         .thenReturn(List.of(project1, project2));
     when(skillClient.getSkillsByIds(
-            argThat(list -> list.containsAll(List.of(10L, 20L)) && list.size() == 2)))
+            argThat(list -> list.containsAll(List.of(10L, 20L)) && list.size() == 2),
+            eq(FAKE_TOKEN)))
         .thenReturn(List.of(skill10, skill20));
     when(personMapper.toExtendedDto(p1, List.of(project1), List.of(skill10))).thenReturn(dto1);
     when(personMapper.toExtendedDto(p2, List.of(project2), List.of(skill20))).thenReturn(dto2);
 
     // When
-    List<PersonExtendedDto> result = personService.findAllExtended();
+    List<PersonExtendedDto> result = personService.findAllExtended(FAKE_TOKEN);
 
     // Then
     assertEquals(2, result.size());
     assertEquals(List.of(dto1, dto2), result);
 
     verify(personRepository).findAll();
-    verify(projectClient).getProjectsByIds(anyList());
-    verify(skillClient).getSkillsByIds(anyList());
+    verify(projectClient).getProjectsByIds(anyList(), eq(FAKE_TOKEN));
+    verify(skillClient).getSkillsByIds(anyList(), eq(FAKE_TOKEN));
   }
 
   @Test
@@ -570,14 +575,14 @@ class PersonServiceImplTests {
 
     when(personRepository.findAll()).thenReturn(List.of());
 
-    List<PersonExtendedDto> result = personService.findAllExtended();
+    List<PersonExtendedDto> result = personService.findAllExtended(FAKE_TOKEN);
 
     assertTrue(result.isEmpty());
 
     verify(personRepository).findAll();
-    verify(projectClient).getProjectsByIds(new ArrayList<>(Set.of()));
+    verify(projectClient).getProjectsByIds(new ArrayList<>(Set.of()), FAKE_TOKEN);
     verifyNoMoreInteractions(projectClient);
-    verify(skillClient).getSkillsByIds(new ArrayList<>(Set.of()));
+    verify(skillClient).getSkillsByIds(new ArrayList<>(Set.of()), FAKE_TOKEN);
     verifyNoMoreInteractions(skillClient);
     verifyNoInteractions(personMapper);
   }

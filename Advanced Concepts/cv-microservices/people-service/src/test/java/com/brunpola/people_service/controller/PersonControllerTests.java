@@ -10,6 +10,7 @@ import com.brunpola.people_service.domain.dto.IdsRequestDto;
 import com.brunpola.people_service.domain.dto.PersonDto;
 import com.brunpola.people_service.domain.dto.PersonExtendedDto;
 import com.brunpola.people_service.domain.entity.PersonEntity;
+import com.brunpola.people_service.service.JwtUtil;
 import com.brunpola.people_service.service.PersonService;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,12 +32,15 @@ class PersonControllerTests {
   @Autowired private MockMvc mockMvc;
 
   @MockitoBean private PersonService personService;
+  @MockitoBean private JwtUtil jwtUtil;
   @Autowired private ObjectMapper objectMapper;
 
   PersonDto personDtoWithId;
   PersonDto personDtoNoId;
   PersonEntity personEntityWithId;
   PersonEntity personEntityNoId;
+
+  private static final String FAKE_TOKEN = "Bearer fake-token";
 
   @BeforeEach
   void setUp() {
@@ -144,17 +148,18 @@ class PersonControllerTests {
 
     List<PersonExtendedDto> extendedPeople = TestDataUtil.samplePeopleExtendedDtos(true, 3);
 
-    when(personService.findAllExtended()).thenReturn(extendedPeople);
+    when(personService.findAllExtended(FAKE_TOKEN)).thenReturn(extendedPeople);
 
     mockMvc
         .perform(
             MockMvcRequestBuilders.get("/api/people/extended")
+                .header("Authorization", FAKE_TOKEN)
                 .contentType(MediaType.APPLICATION_JSON))
         .andExpect(MockMvcResultMatchers.status().isOk())
         .andExpect(
             MockMvcResultMatchers.content().json(objectMapper.writeValueAsString(extendedPeople)));
 
-    verify(personService).findAllExtended();
+    verify(personService).findAllExtended(FAKE_TOKEN);
   }
 
   @Test
@@ -162,17 +167,18 @@ class PersonControllerTests {
 
     PersonExtendedDto extendedPerson = TestDataUtil.samplePersonExtendedDto(true);
 
-    when(personService.findOneExtended(1L)).thenReturn(extendedPerson);
+    when(personService.findOneExtended(1L, FAKE_TOKEN)).thenReturn(extendedPerson);
 
     mockMvc
         .perform(
             MockMvcRequestBuilders.get("/api/people/1/extended")
+                .header("Authorization", FAKE_TOKEN)
                 .contentType(MediaType.APPLICATION_JSON))
         .andExpect(MockMvcResultMatchers.status().isOk())
         .andExpect(
             MockMvcResultMatchers.content().json(objectMapper.writeValueAsString(extendedPerson)));
 
-    verify(personService).findOneExtended(1L);
+    verify(personService).findOneExtended(1L, FAKE_TOKEN);
   }
 
   @Test

@@ -5,8 +5,12 @@ import com.brunpola.people_service.domain.dto.PersonExtendedDto;
 import com.brunpola.people_service.domain.entity.PersonEntity;
 import com.brunpola.people_service.domain.external.ProjectDto;
 import com.brunpola.people_service.domain.external.SkillDto;
+import com.brunpola.people_service.service.JwtUtil;
+import io.jsonwebtoken.Jwts;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import org.springframework.security.core.userdetails.UserDetails;
 
 public class TestDataUtil {
 
@@ -125,5 +129,21 @@ public class TestDataUtil {
       peopleDtos.add(personDto);
     }
     return peopleDtos;
+  }
+
+  public static UserDetails dummyUser() {
+    return org.springframework.security.core.userdetails.User.withUsername("test-user")
+        .password("password")
+        .authorities("ROLE_USER")
+        .build();
+  }
+
+  public static String getExpiredToken(UserDetails user, JwtUtil jwtUtil) {
+    return Jwts.builder()
+        .subject(user.getUsername())
+        .issuedAt(new Date(System.currentTimeMillis() - 2 * JwtUtil.ONE_DAY_IN_MILLIS))
+        .expiration(new Date(System.currentTimeMillis() - JwtUtil.ONE_DAY_IN_MILLIS))
+        .signWith(jwtUtil.getSigningKey(), Jwts.SIG.HS256)
+        .compact();
   }
 }
