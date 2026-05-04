@@ -928,7 +928,7 @@ Gore je key definiran u kodu, ali realnije je da bude environment varijabla ili 
 Kad server primi token i želi provjeriti je li token legit ili je mijenjan, ponovo izračuna hash (signature) na temelju headera, payloada i secreta.
 Ako se primljeni i izračunati signature podudaraju, token je ispravan. (Kasnije se još provjerava je li valjan u smislu roka trajanja)
 
-Pomoćna funkcija `getSigningKey()` samo pretvara string ``SECRET_KEY` u instancu `SecretKey` objekta jer funkcija `.signWith()` očekuje takav argument.
+Pomoćna funkcija `getSigningKey()` samo pretvara string `SECRET_KEY` u instancu `SecretKey` objekta jer funkcija `.signWith()` očekuje takav argument.
 
 #### Dohvaćanje tokena (registracija i autentikacija)
 
