@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -77,13 +78,15 @@ public class ProjectController {
   }
 
   @GetMapping("/extended")
-  public List<ProjectExtendedDto> listProjectsExtended() {
-    return projectService.findAllExtended();
+  public List<ProjectExtendedDto> listProjectsExtended(
+      @RequestHeader("Authorization") String authHeader) {
+    return projectService.findAllExtended(authHeader);
   }
 
   @GetMapping("/{id}/extended")
-  public ProjectExtendedDto getProjectExtended(@PathVariable("id") Long id) {
-    return projectService.findOneExtended(id);
+  public ProjectExtendedDto getProjectExtended(
+      @PathVariable("id") Long id, @RequestHeader("Authorization") String authHeader) {
+    return projectService.findOneExtended(id, authHeader);
   }
 
   @GetMapping("/by-ids")

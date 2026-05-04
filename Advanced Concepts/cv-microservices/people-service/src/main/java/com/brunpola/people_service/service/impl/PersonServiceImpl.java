@@ -143,22 +143,23 @@ public class PersonServiceImpl implements PersonService {
   }
 
   @Override
-  public PersonExtendedDto findOneExtended(Long id) {
+  public PersonExtendedDto findOneExtended(Long id, String authToken) {
     PersonEntity personEntity =
         personRepository.findById(id).orElseThrow(() -> new PersonNotFoundException(id));
 
     List<Long> projectIds = personEntity.getProjectIds();
     List<ProjectDto> projects =
-        projectIds.isEmpty() ? List.of() : projectClient.getProjectsByIds(projectIds);
+        projectIds.isEmpty() ? List.of() : projectClient.getProjectsByIds(projectIds, authToken);
 
     List<Long> skillIds = personEntity.getSkillIds();
-    List<SkillDto> skills = skillIds.isEmpty() ? List.of() : skillClient.getSkillsByIds(skillIds);
+    List<SkillDto> skills =
+        skillIds.isEmpty() ? List.of() : skillClient.getSkillsByIds(skillIds, authToken);
 
     return personMapper.toExtendedDto(personEntity, projects, skills);
   }
 
   @Override
-  public List<PersonExtendedDto> findAllExtended() {
+  public List<PersonExtendedDto> findAllExtended(String authToken) {
 
     List<PersonEntity> personEntities = personRepository.findAll();
     Set<Long> allProjectIds =
@@ -172,11 +173,11 @@ public class PersonServiceImpl implements PersonService {
             .collect(Collectors.toSet());
 
     Map<Long, ProjectDto> projectDtoMap =
-        projectClient.getProjectsByIds(new ArrayList<>(allProjectIds)).stream()
+        projectClient.getProjectsByIds(new ArrayList<>(allProjectIds), authToken).stream()
             .collect(Collectors.toMap(ProjectDto::getId, project -> project));
 
     Map<Long, SkillDto> skillDtoMap =
-        skillClient.getSkillsByIds(new ArrayList<>(allSkillIds)).stream()
+        skillClient.getSkillsByIds(new ArrayList<>(allSkillIds), authToken).stream()
             .collect(Collectors.toMap(SkillDto::getId, skill -> skill));
 
     return personEntities.stream()

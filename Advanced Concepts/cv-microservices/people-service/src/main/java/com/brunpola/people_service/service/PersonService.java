@@ -31,9 +31,9 @@ public interface PersonService {
 
   List<PersonDto> findBySkillId(Long skillId);
 
-  PersonExtendedDto findOneExtended(Long id);
+  PersonExtendedDto findOneExtended(Long id, String authToken);
 
-  List<PersonExtendedDto> findAllExtended();
+  List<PersonExtendedDto> findAllExtended(String authToken);
 
   List<PersonDto> findByIds(List<Long> ids);
 }

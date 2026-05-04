@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -66,13 +67,15 @@ public class PersonController {
   }
 
   @GetMapping("/extended")
-  public List<PersonExtendedDto> listPeopleExtended() {
-    return personService.findAllExtended();
+  public List<PersonExtendedDto> listPeopleExtended(
+      @RequestHeader("Authorization") String authHeader) {
+    return personService.findAllExtended(authHeader);
   }
 
   @GetMapping("/{id}/extended")
-  public PersonExtendedDto getPersonExtended(@PathVariable("id") Long id) {
-    return personService.findOneExtended(id);
+  public PersonExtendedDto getPersonExtended(
+      @PathVariable("id") Long id, @RequestHeader("Authorization") String authHeader) {
+    return personService.findOneExtended(id, authHeader);
   }
 
   @PutMapping("/{id}/skills")

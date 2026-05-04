@@ -97,25 +97,27 @@ public class SkillServiceImpl implements SkillService {
   }
 
   @Override
-  public SkillExtendedDto findOneExtended(Long id) {
+  public SkillExtendedDto findOneExtended(Long id, String authHeader) {
     SkillEntity skillEntity =
         skillRepository.findById(id).orElseThrow(() -> new SkillNotFoundException(id));
 
-    List<PersonDto> people = peopleClient.findPeopleBySkillId(id);
-    List<ProjectDto> projects = projectClient.findProjectsBySkillId(id);
+    List<PersonDto> people = peopleClient.findPeopleBySkillId(id, authHeader);
+    List<ProjectDto> projects = projectClient.findProjectsBySkillId(id, authHeader);
 
     return skillMapper.toExtendedDto(skillEntity, people, projects);
   }
 
   @Override
-  public List<SkillExtendedDto> findAllExtended() {
+  public List<SkillExtendedDto> findAllExtended(String authHeader) {
     List<SkillEntity> skillEntities = skillRepository.findAll();
 
     return skillEntities.stream()
         .map(
             skillEntity -> {
-              List<PersonDto> people = peopleClient.findPeopleBySkillId(skillEntity.getId());
-              List<ProjectDto> projects = projectClient.findProjectsBySkillId(skillEntity.getId());
+              List<PersonDto> people =
+                  peopleClient.findPeopleBySkillId(skillEntity.getId(), authHeader);
+              List<ProjectDto> projects =
+                  projectClient.findProjectsBySkillId(skillEntity.getId(), authHeader);
 
               return skillMapper.toExtendedDto(skillEntity, people, projects);
             })

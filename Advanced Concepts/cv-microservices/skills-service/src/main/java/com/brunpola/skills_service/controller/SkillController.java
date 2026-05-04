@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -64,13 +65,15 @@ public class SkillController {
   }
 
   @GetMapping("/extended")
-  public List<SkillExtendedDto> listSkillsExtended() {
-    return skillService.findAllExtended();
+  public List<SkillExtendedDto> listSkillsExtended(
+      @RequestHeader("Authorization") String authHeader) {
+    return skillService.findAllExtended(authHeader);
   }
 
   @GetMapping("/{id}/extended")
-  public SkillExtendedDto getSkillExtended(@PathVariable("id") Long id) {
-    return skillService.findOneExtended(id);
+  public SkillExtendedDto getSkillExtended(
+      @PathVariable("id") Long id, @RequestHeader("Authorization") String authHeader) {
+    return skillService.findOneExtended(id, authHeader);
   }
 
   @GetMapping("/by-ids")

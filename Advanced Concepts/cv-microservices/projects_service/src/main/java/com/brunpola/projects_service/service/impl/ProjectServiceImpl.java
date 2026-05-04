@@ -121,19 +121,20 @@ public class ProjectServiceImpl implements ProjectService {
   }
 
   @Override
-  public ProjectExtendedDto findOneExtended(Long id) {
+  public ProjectExtendedDto findOneExtended(Long id, String authHeader) {
     ProjectEntity projectEntity =
         projectRepository.findById(id).orElseThrow(() -> new ProjectNotFoundException(id));
 
-    List<PersonDto> people = peopleClient.findPeopleByProjectId(id);
+    List<PersonDto> people = peopleClient.findPeopleByProjectId(id, authHeader);
     List<Long> skillIds = projectEntity.getSkillIds();
-    List<SkillDto> skills = skillIds.isEmpty() ? List.of() : skillClient.getSkillsByIds(skillIds);
+    List<SkillDto> skills =
+        skillIds.isEmpty() ? List.of() : skillClient.getSkillsByIds(skillIds, authHeader);
 
     return projectMapper.toExtendedDto(projectEntity, people, skills);
   }
 
   @Override
-  public List<ProjectExtendedDto> findAllExtended() {
+  public List<ProjectExtendedDto> findAllExtended(String authHeader) {
 
     List<ProjectEntity> projectEntities = projectRepository.findAll();
 
@@ -143,13 +144,14 @@ public class ProjectServiceImpl implements ProjectService {
             .collect(Collectors.toSet());
 
     Map<Long, SkillDto> skillDtoMap =
-        skillClient.getSkillsByIds(new ArrayList<>(allSkillIds)).stream()
+        skillClient.getSkillsByIds(new ArrayList<>(allSkillIds), authHeader).stream()
             .collect(Collectors.toMap(SkillDto::getId, skill -> skill));
 
     return projectEntities.stream()
         .map(
             projectEntity -> {
-              List<PersonDto> people = peopleClient.findPeopleByProjectId(projectEntity.getId());
+              List<PersonDto> people =
+                  peopleClient.findPeopleByProjectId(projectEntity.getId(), authHeader);
               List<SkillDto> skills =
                   projectEntity.getSkillIds().stream()
                       .map(skillDtoMap::get)

@@ -27,9 +27,9 @@ public interface ProjectService {
 
   List<ProjectDto> findBySkillId(Long skillId);
 
-  ProjectExtendedDto findOneExtended(Long id);
+  ProjectExtendedDto findOneExtended(Long id, String authHeader);
 
-  List<ProjectExtendedDto> findAllExtended();
+  List<ProjectExtendedDto> findAllExtended(String authHeader);
 
   List<ProjectDto> findByIds(List<Long> ids);
 }

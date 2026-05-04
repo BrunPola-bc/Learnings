@@ -23,9 +23,9 @@ public interface SkillService {
 
   void delete(Long id);
 
-  SkillExtendedDto findOneExtended(Long id);
+  SkillExtendedDto findOneExtended(Long id, String authHeader);
 
-  List<SkillExtendedDto> findAllExtended();
+  List<SkillExtendedDto> findAllExtended(String authHeader);
 
   List<SkillDto> findByIds(List<Long> ids);
 }
